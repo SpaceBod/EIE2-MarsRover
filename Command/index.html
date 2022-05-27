@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+/* Import Font from Google Fonts */
+@import url("https://fonts.googleapis.com/css?family=Share+Tech+Mono");
+
+/* Sets font to "Share Tech Mono' */
+body {
+  font-family: "Share Tech Mono", monospace;
+}
+
+/* Style for the message container */
+.message-container {
+  padding-top: 2.5em;
+  text-align: center;
+}
+
+/* Keyboard style */
+.keyboard {
+  padding: 2.5em 0;
+  width: 400px;
+  margin: 0 auto;
+}
+/* Top row for keyboard */
+.top-row {
+  width: 140px;
+  /* Off Centered */
+  /* width: 190px; */
+  margin: 0 auto;
+}
+/* Bottom row for keyboard */
+.bottom-row {
+  display: inline-flex;
+}
+
+/* Style for each Key */
+.key {
+  background-color: #424549;
+  border: 1px solid #1e2124;
+  box-shadow: 5px 5px #7289da;
+  color: #ffffff;
+  width: 100px;
+  margin: 15px;
+  text-align: center;
+  top: 0;
+  left: 0;
+  transition: all 0.07s ease;
+}
+/* Active Class for Key */
+.activeKey {
+  transform: scale(1.1);
+  position: relative;
+  top: 0.2em;
+  left: 0.2em;
+  box-shadow: 0 0 0 0;
+}
+/* Sets font size for each Key */
+.key > p {
+  font-size: 2em;
+}
+</style>
+</head>
+<script src="/Users/admin/Downloads/grid.js"></script>
+<body onload="startGame()">
+    <!-- Message Container -->
+<div class="message-container">
+    <!-- Message -->
+    <h1 id="message">Hello!</h1>
+  </div>
+  <!-- Keyboard Container -->
+  <div class="keyboard">
+    <!-- Top Row -->
+    <div class="top-row">
+      <!-- Key -->
+      <div data-key="87" class="key">
+        <!-- Character -->
+        <p>W</p>
+      </div>
+    </div>
+    <!-- Bottom Row -->
+    <div class="bottom-row">
+      <!-- Key -->
+      <div data-key="65" class="key">
+        <!-- Character -->
+        <p>A</p>
+      </div>
+      <!-- Key -->
+      <div data-key="83" class="key">
+        <!-- Character -->
+        <p>S</p>
+      </div>
+      <!-- Key -->
+      <div data-key="68" class="key">
+        <!-- Character -->
+        <p>D</p>
+      </div>
+    </div>
+  </div>
+<script src="/Users/admin/Downloads/movement.js"></script>
+</body>
+</html>
