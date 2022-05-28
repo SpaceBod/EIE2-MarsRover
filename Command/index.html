@@ -2,102 +2,87 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
 <style>
-/* Import Font from Google Fonts */
-@import url("https://fonts.googleapis.com/css?family=Share+Tech+Mono");
-
-/* Sets font to "Share Tech Mono' */
-body {
-  font-family: "Share Tech Mono", monospace;
+@import url(https://fonts.googleapis.com/css?family=Lato:300);
+html {
+  background: linear-gradient(rgb(52, 52, 52), rgb(0, 0, 0));
+  height: 100%;
 }
 
-/* Style for the message container */
-.message-container {
-  padding-top: 2.5em;
+.keys {
+  font-family: "Lato", sans-serif;
   text-align: center;
+  width: 500px;
+  height: 200px;
+  margin: auto;
 }
 
-/* Keyboard style */
-.keyboard {
-  padding: 2.5em 0;
-  width: 400px;
-  margin: 0 auto;
-}
-/* Top row for keyboard */
-.top-row {
-  width: 140px;
-  /* Off Centered */
-  /* width: 190px; */
-  margin: 0 auto;
-}
-/* Bottom row for keyboard */
-.bottom-row {
-  display: inline-flex;
-}
-
-/* Style for each Key */
-.key {
-  background-color: #424549;
-  border: 1px solid #1e2124;
-  box-shadow: 5px 5px #7289da;
-  color: #ffffff;
+.arr {
+  cursor: pointer;
   width: 100px;
-  margin: 15px;
+  height: 100px;
   text-align: center;
-  top: 0;
-  left: 0;
-  transition: all 0.07s ease;
+  line-height: 100px;
+  background: rgb(53, 53, 53);
+  color: rgb(254, 203, 1);
+  font-size: 50px;
+  border-right: 10px solid #4d4d4d;
+  border-bottom: 10px solid #4d4d4d;
+  border-left: 10px solid #5a5a5a;
+  border-top: 10px solid #676767;
+  display: inline-block;
+  margin: 5px;
+  transition: all 0.05s linear;
+  user-select: none;
 }
-/* Active Class for Key */
-.activeKey {
-  transform: scale(1.1);
+.arr:active {
+  border-bottom: 8px solid #242424;
+  text-shadow: 0 0 10px rgb(255, 255, 255), 0 0 10px white, 0 0 20px white;
+  transform: translate(0, 2px);
+}
+
+.up {
   position: relative;
-  top: 0.2em;
-  left: 0.2em;
-  box-shadow: 0 0 0 0;
+  top: -2px;
 }
-/* Sets font size for each Key */
-.key > p {
-  font-size: 2em;
+
+.pressed {
+  border-bottom: 8px solid #4d4d4d;
+  text-shadow: 0 0 10px rgb(230, 184, 0);
+  transform: translate(0, 2px);
+}
+
+.names {
+  font-size: 18px;
+  font-family: "Lato", sans-serif;
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 10px white, 0 0 10px white, 0 0 10px white, 0 0 10px white;
 }
 </style>
 </head>
-<script src="/Users/admin/Downloads/grid.js"></script>
+<script src="/Users/admin/Desktop/MarsRover/Command/grid.js"></script>
 <body onload="startGame()">
-    <!-- Message Container -->
-<div class="message-container">
-    <!-- Message -->
-    <h1 id="message">Hello!</h1>
+  <div class="keys">
+    <div class="up arr"><i class="fa fa-arrow-up"></i></div>
+    <br />
+    <div class="left arr"><i class="fa fa-arrow-left"></i></div>  
+    <div class="down arr"><i class="fa fa-arrow-down"></i></div>
+    <div class="right arr"><i class="fa fa-arrow-right"></i></div>
   </div>
-  <!-- Keyboard Container -->
-  <div class="keyboard">
-    <!-- Top Row -->
-    <div class="top-row">
-      <!-- Key -->
-      <div data-key="87" class="key">
-        <!-- Character -->
-        <p>W</p>
-      </div>
-    </div>
-    <!-- Bottom Row -->
-    <div class="bottom-row">
-      <!-- Key -->
-      <div data-key="65" class="key">
-        <!-- Character -->
-        <p>A</p>
-      </div>
-      <!-- Key -->
-      <div data-key="83" class="key">
-        <!-- Character -->
-        <p>S</p>
-      </div>
-      <!-- Key -->
-      <div data-key="68" class="key">
-        <!-- Character -->
-        <p>D</p>
-      </div>
-    </div>
+  <br />
+  <br />
+  <br />
+  <br />
+  <div class="names">
+    <div class="uptext"></div>
+    <div class="downtext"></div>
+    <div class="lefttext"></div>
+    <div class="righttext"></div>
   </div>
-<script src="/Users/admin/Downloads/movement.js"></script>
+  <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<script src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+<script src="/Users/admin/Desktop/MarsRover/Command/movement.js"></script>
 </body>
 </html>
