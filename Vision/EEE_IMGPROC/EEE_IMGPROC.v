@@ -71,35 +71,55 @@ parameter BB_COL_DEFAULT = 24'h00ff00;
 
 
 wire [7:0]   red, green, blue, grey;
+wire [9:0]   hue, sat, val;
 wire [7:0]   red_out, green_out, blue_out;
 
 wire         sop, eop, in_valid, out_ready;
 ////////////////////////////////////////////////////////////////////////
 
+// RGB to HSV conversion
+wire [7:0] cmax, cmin;
+assign cmax = ((red >= green) && (red >= blue)) ? red : ((green >= blue) && (green >= red)) ? green : blue;
+assign cmin = ((red <= green) && (red <= blue)) ? red : ((green <= blue) && (green <= red)) ? green : blue;
+
+assign hue = ((cmax - cmin) == 0) ? 10'd0 : (cmax == red) ? (((170*(green - blue))/(cmax - cmin)) % 1020) : (cmax == green) ? (((170*(blue - red)/(cmax - cmin)) + 340) % 1020) : (((170*(red - green)/(cmax - cmin)) + 680) % 1020);
+assign sat = (cmax == 0) ? 10'd0 : (1024*(cmax - cmin)/cmax);
+assign val = cmax << 2;
+
+// Detect colours
+wire green_detect, orange_detect, red_detect, pink_detect;
+assign green_detect = hue >= 301 && hue <= 433 && sat >= 378 && sat <= 1024 && val >= 157 && val <= 1024;
+assign orange_detect = hue >= 70 && hue <= 177 && sat >= 212 && sat <= 984 && val >= 929 && val <= 1024;
+assign red_detect = (hue >= 995 || hue <= 177) && sat >= 596 && sat <= 1024 && val >= 669 && val <= 1024;
+assign pink_detect = hue >= 37 && hue <= 91 && sat >= 173 && sat <= 1024 && val >= 957 && val <= 1024;
+
+/*
 // Detect red areas
 wire red_detect;
-assign red_detect = red[7] & ~green[7] & ~blue[7];
+assign red_detect = 1;
 // Detect green areas
 wire green_detect;
 assign green_detect = ~red[7] & green[7] & ~blue[7];
 // Detect blue areas
 wire blue_detect;
 assign blue_detect = ~red[7] & ~green[7] & blue[7];
+*/
 
 // Find boundary of cursor box
 
 // Highlight detected areas
-wire [23:0] red_high, green_high, blue_high;
+wire [23:0] green_high, orange_high, red_high, pink_high;
 assign grey = green[7:1] + red[7:2] + blue[7:2]; //Grey = green/2 + red/4 + blue/4
-assign red_high  =  red_detect ? {8'hff, 8'h0, 8'h0} : {grey, grey, grey};
 assign green_high  =  green_detect ? {8'h0, 8'hff, 8'h0} : {grey, grey, grey};
-assign blue_high  =  blue_detect ? {8'h0, 8'h0, 8'hff} : {grey, grey, grey};
+assign orange_high  =  orange_detect ? {8'hff, 8'ha5, 8'h0} : green_high;
+assign red_high  =  red_detect ? {8'hff, 8'h0, 8'h0} : orange_high;
+assign pink_high  =  pink_detect ? {8'hff, 8'hc0, 8'hcb} : red_high;
 
 // Show bounding box
 wire [23:0] new_image;
 wire bb_active;
 assign bb_active = (x == left) | (x == right) | (y == top) | (y == bottom);
-assign new_image = bb_active ? bb_col : red_high;
+assign new_image = bb_active ? bb_col : pink_high;
 
 // Switch output pixels depending on mode switch
 // Don't modify the start-of-packet word - it's a packet discriptor

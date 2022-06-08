@@ -100,8 +100,8 @@ ACDS_VERSION := 18.1
 # used to generate this makefile. 
 # BUILD_NUMBER: 625
 
-SETTINGS_FILE := ../../../../../../../../OneDrive - Imperial College London/Education/Year_2/Information_Processing/EEE2Rover-master/DE10_LITE_D8M_VIP_16/software/D8M_Camera_Test_bsp/settings.bsp
-SOPC_FILE := ../../../../../../../../OneDrive - Imperial College London/Education/Year_2/Information_Processing/EEE2Rover-master/DE10_LITE_D8M_VIP_16/Qsys.sopcinfo
+SETTINGS_FILE := settings.bsp
+SOPC_FILE := ../../Qsys.sopcinfo
 
 #-------------------------------------------------------------------------------
 #                             TOOL & COMMAND DEFINITIONS

@@ -51,29 +51,31 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  16 .debug_ranges 00001aa8  00000000  00000000  0007f710  2**3
                   CONTENTS, READONLY, DEBUGGING
- 17 .thread_model 00000003  00000000  00000000  00084f1f  2**0
+ 17 .thread_model 00000003  00000000  00000000  00084f51  2**0
                   CONTENTS, READONLY
- 18 .cpu          0000000a  00000000  00000000  00084f22  2**0
+ 18 .cpu          0000000a  00000000  00000000  00084f54  2**0
                   CONTENTS, READONLY
- 19 .qsys         00000001  00000000  00000000  00084f2c  2**0
+ 19 .qsys         00000001  00000000  00000000  00084f5e  2**0
                   CONTENTS, READONLY
- 20 .simulation_enabled 00000001  00000000  00000000  00084f2d  2**0
+ 20 .simulation_enabled 00000001  00000000  00000000  00084f5f  2**0
                   CONTENTS, READONLY
- 21 .sysid_hash   00000004  00000000  00000000  00084f2e  2**0
+ 21 .sysid_hash   00000004  00000000  00000000  00084f60  2**0
                   CONTENTS, READONLY
- 22 .sysid_base   00000004  00000000  00000000  00084f32  2**0
+ 22 .sysid_base   00000004  00000000  00000000  00084f64  2**0
                   CONTENTS, READONLY
- 23 .sysid_time   00000004  00000000  00000000  00084f36  2**0
+ 23 .sysid_time   00000004  00000000  00000000  00084f68  2**0
                   CONTENTS, READONLY
- 24 .stderr_dev   00000009  00000000  00000000  00084f3a  2**0
+ 24 .stderr_dev   00000009  00000000  00000000  00084f6c  2**0
                   CONTENTS, READONLY
- 25 .stdin_dev    00000009  00000000  00000000  00084f43  2**0
+ 25 .stdin_dev    00000009  00000000  00000000  00084f75  2**0
                   CONTENTS, READONLY
- 26 .stdout_dev   00000009  00000000  00000000  00084f4c  2**0
+ 26 .stdout_dev   00000009  00000000  00000000  00084f7e  2**0
                   CONTENTS, READONLY
- 27 .sopc_system_name 00000004  00000000  00000000  00084f55  2**0
+ 27 .sopc_system_name 00000004  00000000  00000000  00084f87  2**0
                   CONTENTS, READONLY
- 28 .quartus_project_dir 00000068  00000000  00000000  00084f59  2**0
+ 28 .quartus_project_dir 00000068  00000000  00000000  00084f8b  2**0
+                  CONTENTS, READONLY
+ 29 .sopcinfo     000a03d4  00000000  00000000  00084ff3  2**0
                   CONTENTS, READONLY
 SYMBOL TABLE:
 00020000 l    d  .entry	00000000 .entry
