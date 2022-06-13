@@ -1,6 +1,6 @@
 #display{
     position: absolute;
-    border: 4px solid rgb(96, 96, 96);
+    border: 4px solid rgb(255, 255, 255);
     border-radius: 15px;
     top: 0px;
     width: min(50%, 100vh/1.5);
@@ -10,7 +10,7 @@
 
 #displayScroll{
     position: relative;
-    border: 4px solid rgb(96, 96, 96);
+    border: 4px solid rgb(255, 255, 255);
     border-radius: 15px;
     top: 0px;
     width: 100%;

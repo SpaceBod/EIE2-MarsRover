@@ -55,7 +55,6 @@ class Stats extends React.Component {
         var xpos = data[i]["coords"].split(', ')[0];
         var ypos = data[i]["coords"].split(', ')[1];
         var coords = xpos.padStart(3, "0") + ", " +  ypos.padStart(3, "0");
-
         var alienID = "a"+i.toString();
         try{
           // ADD ALIEN COLOUR

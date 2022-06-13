@@ -19,6 +19,46 @@ class ChangePos extends React.Component {
   }
 }
 
+class SetPower extends React.Component {
+
+  componentDidMount(){
+    // SLIDER CODE
+    const ajax_script = document.createElement("script");
+    ajax_script.async = true;
+    ajax_script.src = "//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js";
+    this.div.appendChild(ajax_script);
+    var rangeSetPower = function(){
+      var slider = $('.setPowerSlider'),
+          range = $('.setPowerSlider__range'),
+          value = $('.setPowerSlider__value');
+        
+      slider.each(function(){
+    
+        value.each(function(){
+          var value = $(this).prev().attr('value');
+          $(this).html(value);
+        });
+        range.on('input', function(){
+          $(this).next(value).html(this.value + "%");
+        });
+      });
+    };
+    rangeSetPower();
+  }
+
+  render() {
+    return(
+      <div>
+        <div className="Range" ref={el => (this.div = el)}></div>
+        <div className="setPowerSlider">
+          <input className="setPowerSlider__range" type="range" defaultValue={50+ "%"} min={0} max={100} step={10} />
+          <span className="setPowerSlider__value">50</span>
+        </div>
+      </div>
+    );
+  }
+}
+
 // ANGLE MANUAL INPUT
 class AngleInput extends React.Component {
 
@@ -39,7 +79,7 @@ class AngleInput extends React.Component {
     }
 
     if(doSend){
-
+      console.log("DATA SENT", movement);
       const data = { body: movement };
       // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
       // axios.post('http://localhost:3001', data)
@@ -65,9 +105,9 @@ class AngleInput extends React.Component {
     ajax_script.src = "//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js";
     this.div.appendChild(ajax_script);
     var rangeSliderAngle = function(){
-      var slider = $('.range2-slider'),
-          range = $('.range2-slider__range'),
-          value = $('.range2-slider__value');
+      var slider = $('.setAngleSlider'),
+          range = $('.setAngleSlider__range'),
+          value = $('.setAngleSlider__value');
         
       slider.each(function(){
     
@@ -87,11 +127,12 @@ class AngleInput extends React.Component {
     return(
       <div>
         <div className="Range" ref={el => (this.div = el)}></div>
-        <div className="range2-slider">
-          <input className="range2-slider__range" type="range" defaultValue={0+ "°"} min={-180} max={180} step={45} />
-          <span className="range2-slider__value">0</span>
+        <div className="setAngleSlider">
+          <input className="setAngleSlider__range" type="range" defaultValue={0+ "°"} min={-180} max={180} step={45} />
+          <span className="setAngleSlider__value">0</span>
         </div>
-        <button className='btn' onClick= {() => this.sendData({distance: document.getElementsByClassName("range-slider__value")[0].innerHTML, angle: document.getElementsByClassName("range2-slider__value")[0].innerHTML, power:"50"})} >Send Instruction</button>
+        <SetPower />
+        <button className='btn' onClick= {() => this.sendData({distance: document.getElementsByClassName("setDistSlider__value")[0].innerHTML, angle: document.getElementsByClassName("setAngleSlider__value")[0].innerHTML, power: document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1)})} >Send Instruction</button>
         <ChangePos />
         <div className = "status"> Remote Control
           <div className = "statusLED"></div>
@@ -111,9 +152,9 @@ class DistInput extends React.Component {
     ajax_script.src = "//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js";
     this.div.appendChild(ajax_script);
     var rangeSliderDist = function(){
-      var slider = $('.range-slider'),
-          range = $('.range-slider__range'),
-          value = $('.range-slider__value');
+      var slider = $('.setDistSlider'),
+          range = $('.setDistSlider__range'),
+          value = $('.setDistSlider__value');
         
       slider.each(function(){
     
@@ -133,9 +174,9 @@ class DistInput extends React.Component {
     return(
       <div>
         <div className="Range" ref={el => (this.div = el)}></div>
-        <div className="range-slider">
-          <input className="range-slider__range" type="range" defaultValue={0+ "cm"} min={-200} max={200} step={5} />
-          <span className="range-slider__value">0</span>
+        <div className="setDistSlider">
+          <input className="setDistSlider__range" type="range" defaultValue={0+ "cm"} min={-200} max={200} step={5} />
+          <span className="setDistSlider__value">0</span>
         </div>
         <AngleInput />
       </div>
@@ -279,16 +320,9 @@ class ArrowMovement extends React.Component {
         e.gamepad.id
       )
     })
-    var fcount = 0;
-    var bcount = 0;
-    var rcount = 0;
-    var lcount = 0;
-    var acount = 0;
-    var tcount = 0;
-    var togglecount = 0;
+    var fcount, bcount, rcount, lcount, acount, tcount, togglecount, rtPow, ltPow;
+    fcount = bcount = rcount = lcount = acount = tcount = togglecount = rtPow = ltPow = 0;
     var toggleValue = false;
-    var rtPow = 0;
-    var ltPow = 0;
     var send = false;
 
     const element = document.querySelector('.statusLED');
@@ -309,6 +343,7 @@ class ArrowMovement extends React.Component {
         const toggleRemote = myGamepad.buttons[9].pressed;
         const varRT = myGamepad.buttons[7];
         const varLT = myGamepad.buttons[6];
+        const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
 
         var total = fcount + bcount + rcount + lcount;
 
@@ -324,16 +359,16 @@ class ArrowMovement extends React.Component {
           if (rt === true){
             fcount = 1;
             tcount = 0;
-            rtPow = (Math.round(100*varRT.value)).toString();
+            rtPow = Math.round(varRT.value);
             
             if (axisLR > 0.5){
-              sendMovement({distance:"2cm", angle: "5°", power:rtPow});
+              sendMovement({distance:"2cm", angle: "5°", power:rtPow * power});
             }
             if (axisLR < -0.5){
-              sendMovement({distance:"2cm", angle: "-5°", power:rtPow});
+              sendMovement({distance:"2cm", angle: "-5°", power:rtPow * power});
             }
             else{
-              sendMovement({distance:"2cm", angle: "0°", power:rtPow});
+              sendMovement({distance:"2cm", angle: "0°", power:rtPow * power});
             }
             forwards();
           }
@@ -346,15 +381,15 @@ class ArrowMovement extends React.Component {
           if (lt === true && fcount === 0){
             bcount = 1;
             tcount = 0;
-            ltPow = (Math.round(100*varLT.value)).toString();
+            ltPow = Math.round(varLT.value);
             if (axisLR > 0.5){
-              sendMovement({distance:"-2cm", angle: "5°", power:ltPow});
+              sendMovement({distance:"-2cm", angle: "5°", power:ltPow * power});
             }
             if (axisLR < -0.5){
-              sendMovement({distance:"-2cm", angle: "-5°", power:ltPow});
+              sendMovement({distance:"-2cm", angle: "-5°", power:ltPow * power});
             }
             else{
-              sendMovement({distance:"-2cm", angle: "0°", power:ltPow});
+              sendMovement({distance:"-2cm", angle: "0°", power:ltPow * power});
             }
             backwards();
           }
@@ -367,7 +402,7 @@ class ArrowMovement extends React.Component {
           if (axisLR > 0.5){
             rcount = 1;
             tcount = 0;
-            sendMovement({distance:"0cm", angle: "5°", power:"50"});
+            sendMovement({distance:"0cm", angle: "5°", power: power});
             right();
           }
           // RIGHT ROTATE RESET
@@ -379,7 +414,7 @@ class ArrowMovement extends React.Component {
           if (axisLR < -0.5){
             lcount = 1;
             tcount = 0;
-            sendMovement({distance:"0cm", angle: "-5°", power:"50"});
+            sendMovement({distance:"0cm", angle: "-5°", power: power});
             left();
           }
           // LEFT ROTATE RESET
@@ -396,7 +431,7 @@ class ArrowMovement extends React.Component {
           // SLIDER CONTROL DPAD
           // DISTANCE POSITIVE
           if (dpadR === true){
-            var distancePosR = document.getElementsByClassName('range-slider__range')[0];
+            var distancePosR = document.getElementsByClassName('setDistSlider__range')[0];
             var distanceValR = parseInt(distancePosR.value);
             if (distanceValR + 5 <= 200) {
               distanceValR += 5 ;
@@ -405,11 +440,11 @@ class ArrowMovement extends React.Component {
               distanceValR +=0;
             }
             distancePosR.value = distanceValR;
-            document.getElementsByClassName('range-slider__value')[0].innerHTML = distanceValR + "cm";
+            document.getElementsByClassName('setDistSlider__value')[0].innerHTML = distanceValR + "cm";
           }
           // DISTANCE NEGATIVE
           if (dpadL === true){
-            var distancePosL = document.getElementsByClassName('range-slider__range')[0];
+            var distancePosL = document.getElementsByClassName('setDistSlider__range')[0];
             var distanceValL = parseInt(distancePosL.value);
             if (distanceValL - 5 >= -200) {
               distanceValL -= 5 ;
@@ -418,11 +453,11 @@ class ArrowMovement extends React.Component {
               distanceValL-=0;
             }
             distancePosL.value = distanceValL;
-            document.getElementsByClassName('range-slider__value')[0].innerHTML = distanceValL + "cm";
+            document.getElementsByClassName('setDistSlider__value')[0].innerHTML = distanceValL + "cm";
           }
           // ANGLE POSITIVE
           if (dpadU === true){
-            var anglePosU = document.getElementsByClassName('range2-slider__range')[0];
+            var anglePosU = document.getElementsByClassName('setAngleSlider__range')[0];
             var angleValU = parseInt(anglePosU.value);
             if (angleValU + 45 <= 180) {
               angleValU+=45;
@@ -431,11 +466,11 @@ class ArrowMovement extends React.Component {
               angleValU += 0;
             }
             anglePosU.value = angleValU;
-            document.getElementsByClassName('range2-slider__value')[0].innerHTML = angleValU + "°";
+            document.getElementsByClassName('setAngleSlider__value')[0].innerHTML = angleValU + "°";
           }
           // ANGLE NEGATIVE
           if (dpadD === true){
-            var anglePosD = document.getElementsByClassName('range2-slider__range')[0];
+            var anglePosD = document.getElementsByClassName('setAngleSlider__range')[0];
             var angleValD = parseInt(anglePosD.value);
             if (angleValD - 45 >= -180) {
               angleValD -= 45 ;
@@ -444,12 +479,12 @@ class ArrowMovement extends React.Component {
               angleValD-=0;
             }
             anglePosD.value = angleValD;
-            document.getElementsByClassName('range2-slider__value')[0].innerHTML = angleValD + "°";
+            document.getElementsByClassName('setAngleSlider__value')[0].innerHTML = angleValD + "°";
           }
           // BUTTON A: SEND MANUAL DISTANCE + ANGLE
           if (aButton === true && acount === 0){
             acount = 1;
-            sendButton({distance: document.getElementsByClassName("range-slider__value")[0].innerHTML, angle: document.getElementsByClassName("range2-slider__value")[0].innerHTML});
+            sendButton({distance: document.getElementsByClassName("setDistSlider__value")[0].innerHTML, angle: document.getElementsByClassName("setAngleSlider__value")[0].innerHTML});
             document.getElementsByClassName("btn")[0].style.top="6px";
           }
           if (aButton === false && acount === 1){
@@ -481,19 +516,23 @@ class ArrowMovement extends React.Component {
     // WASD KEY MOVEMENT DOWN
     document.addEventListener('keydown', function(event) {
       if (event.key === "w" && send === true) {
-        sendMovement({distance:"2cm", angle: "0°", power:"50"});
+        const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
+        sendMovement({distance:"2cm", angle: "0°", power:power});
         forwards();
       }
       else if (event.key === "a" && send === true) {
-        sendMovement({distance:"0cm", angle: "-5°", power:"50"});
+        const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
+        sendMovement({distance:"0cm", angle: "-5°", power:power});
         left();
       }
       else if (event.key === "s" && send === true) {
-        sendMovement({distance:"-2cm", angle: "0°", power:"50"});
+        const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
+        sendMovement({distance:"-2cm", angle: "0°", power:power});
         backwards();
       }
       else if (event.key === "d" && send === true) {
-        sendMovement({distance:"0cm", angle: "5°", power:"50"});
+        const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
+        sendMovement({distance:"0cm", angle: "5°", power:power});
         right();
       }
     
@@ -525,7 +564,7 @@ class ArrowMovement extends React.Component {
     if (getColour === "rgb(255, 0, 0)" || getColour === ""){
       send = true;
       buttonStat.style.backgroundColor = "rgb(0, 255, 0)";
-      console.log("[START TOGGLE]");
+      console.log("[REMOTE ENABLED]");
       const data = { body: "true" };
       // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
       // axios.post('http://localhost:3001', data)
@@ -538,7 +577,7 @@ class ArrowMovement extends React.Component {
     else{
       send = false;
       buttonStat.style.backgroundColor = "rgb(255, 0, 0)";
-      console.log("[START TOGGLE]");
+      console.log("[REMOTE DISABLED]");
       const data = { body: "false" };
       // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
       // axios.post('http://localhost:3001', data)

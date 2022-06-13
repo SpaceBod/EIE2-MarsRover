@@ -18,6 +18,9 @@ class Map extends React.Component {
     var canvas = document.getElementById(windowSize);
     var ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // ctx.fillStyle = "rgb(143, 141, 140)";
+    // ctx.rect(0, 0, canvas.width, canvas.height);
+    // ctx.fill();
 
     // GET ALIEN POS
     const a0Pos = document.getElementById("a0").getElementsByClassName("pos")[0].innerHTML.split(',');
@@ -45,6 +48,16 @@ class Map extends React.Component {
       ctx.lineWidth = 1;
       ctx.fillStyle = getComputedStyle(document.getElementById.bind(document)(aliens[x]).getElementsByClassName("dot")[0]).color;
       ctx.arc(alienPos[x][0], alienPos[x][1], 10, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillStyle = "white";
+      ctx.arc(alienPos[x][0], alienPos[x][1], 2, 0, 2 * Math.PI);
+    }
+
+    for (var i in alienPos){
+      ctx.beginPath();
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "white";
+      ctx.arc(alienPos[i][0]-4, alienPos[i][1]-4, 2, 0, 2 * Math.PI);
       ctx.fill();
     }
     
