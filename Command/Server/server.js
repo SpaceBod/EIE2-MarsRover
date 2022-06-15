@@ -9,12 +9,19 @@ const bodyParser = require('body-parser');
 const {response} = require('express');
 const { vary } = require('express/lib/response');
 const { toNumber } = require('lodash');
+const mysql = require(`mysql-await`);// do: npm install mysql-await
+const dgram = require('dgram');
+
+//for UDP:
+const client = dgram.createSocket('udp4');
+const PORT = 3004; 
+const HOST = '192.168.137.167'; //pass in HOST (laptop hotspot ip) as number after node server, eg: node server 192.168.138.70
 
 server.use(cors())
+server.use(bodyParser.urlencoded({extended: true}))
 server.use(bodyParser.json())
 
 server.listen(3003, ()=> {console.log("Server started on port 3003")})
-
 
 server.get("/", (req, res)=>{
 
@@ -92,7 +99,7 @@ server.get("/getbuildings", async(req,res)=>{
         addBuilding(element)
     })
 
-    let newaws = getBuildings()
+    let newaws = await getBuildings()
     //res.send(newaws)
     if(diff.length != 0){
         res.send("rover(s) added")
@@ -100,8 +107,6 @@ server.get("/getbuildings", async(req,res)=>{
         else{
             res.send("nothing added g")
         }
-    
-
    
 })
 
@@ -110,6 +115,7 @@ server.get("/getrover", async(req,res) =>{
 
     let resp = await querydb("rover") //get sql stuff
     let useableresp = JSON.parse(JSON.stringify(resp));
+    console.log("here")
 
     local = []
     useableresp.forEach(element => { //angle, battery, coords needed
@@ -168,7 +174,7 @@ server.get("/getfan", async(req,res)=> {
         addFan(element)
     })
 
-    let newaws = getFans()
+    let newaws = await getFans()
     //res.send(newaws.Items)
     if(diff.length != 0){
         res.send("fan(s) added")
@@ -179,7 +185,7 @@ server.get("/getfan", async(req,res)=> {
 })
 
 
-server.post("/movement", (req, res)=>{ //for remote movement
+/*server.post("/movement", (req, res)=>{ //for remote movement
 
     let body = req.body;
     let instr = body.body;
@@ -193,6 +199,26 @@ server.post("/movement", (req, res)=>{ //for remote movement
    // })
   
     res.send("recieved")
+})*/
+
+server.post("/movement", (req,res)=>{
+
+    let body = req.body;
+    let instr = body.body;
+
+    console.log(req.body)
+    var movementData = instr.distance + " " + instr.angle + " " + instr.power;
+    const message = Buffer.from(movementData, "utf8");
+    client.send(message, 0, message.length, PORT, HOST, function(err, bytes) {
+      if (err) {
+          console.error(`UDP manual control send error:`, err);
+      } else {
+          console.log(`UDP manual control instr sent to ${HOST}:${PORT}`);
+
+      }
+    });
+   // console.log('send UDP port:', )
+    res.json({success: true});
 })
 
 
@@ -201,8 +227,77 @@ server.post("/togglemovement", (req,res)=>{
     let body = req.body;
     let toggle = body.body;
     
-    senddb(toggle);
+    
+   // senddb(toggle); //add this later - does the toggling remote control off/on
 
     res.send(JSON.stringify("Remote set to: ", toggle))
 })
  
+server.get("/addalienmanual", (req,res)=>{
+
+	res.sendFile("./form.html", {root: __dirname})
+})
+server.post("/addalienmanual", async(req,res)=>{
+
+    let info = req.body
+    let send = {coord: info.coord, colour: info.colour}
+    await addAlien(send)
+    res.redirect("/addalienmanual")
+    console.log("alien added: ", send)
+})
+
+/*server.get("/addalienmanual", async(req,res)=>{
+
+	//let coord = req.body.coord;
+	//let colour = req.body.colour;
+	const alien = {coord: "-70, 300", colour: "pink"}
+	console.log(alien);
+    try{
+        const newAlien = await addAlien(alien);
+       // res.redirect("/addalienmanual")
+        console.log("alien added hopefully")
+        res.send("done")
+    }
+    catch(error){
+        console.log(error)
+        res.status(500).json({err: "gone wrong ooft"})
+    }
+    
+})*/
+
+server.get("/localmanual", (req,res)=>{
+
+    let input = {distance: "4cm", angle: "90º"}
+    senddb(input)
+    res.send(input)
+
+})
+
+server.get("/addcommand", (req,res)=>{
+
+    res.sendFile("./comform.html", {root: __dirname})
+})
+
+server.post("/addcommand", (req,res)=>{
+    
+    let r = req.body
+    let d = r.dist
+    let a = r.ang
+    let inp = {distance: d+'cm', angle: a+'º'}
+    console.log( r, d, a)
+    senddb(inp)
+    res.redirect("/addcommand")
+    
+})
+    //delete oldest: DELETE FROM roverdata WHERE id IS NOT NULL order by id asc LIMIT 1
+    //get oldest: SELECT * FROM roverdata WHERE id IS NOT NULL ORDER BY id ASC LIMIT 1
+
+
+ /*   if(done == true){
+        do sql querys above
+        set done = false
+        send get sql result to drive
+
+    }
+    */
+
