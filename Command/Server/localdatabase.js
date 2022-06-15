@@ -1,37 +1,36 @@
 const mysql = require(`mysql-await`);// do: npm install mysql-await
 const cors = require('cors');
 const express = require('express');
-const { toNumber } = require('lodash');
 var app = express();
 
 app.use(cors())
 
 const connection = mysql.createConnection({ //info on database + create connection
-    host: "127.0.0.1",
-    database:"roverdata",  
-    user:"root",
-    password:"pass"
+    host: "146.169.196.124",// 127.0.0.1 is me
+    database:"esp32_data",  //mine is roverdata, for esp: esp32_data
+    user:"savraj", // me is root, for esp: savraj
+    password:"password" // me is pass, for esp: password
 })
 
 connection.connect(err=>{err? //connect to sql database
     console.log(err):
-    console.log("Connected to local MYSQL database")
+    console.log("Connected to esp32 MYSQL database")
 });
 
 
 const querydb = async (itemtoget)=> {
 
     if(itemtoget == "aliens"){
-        var sql = "SELECT x_direction, y_direction, colour FROM test WHERE alien_present = 'yes'" 
+        var sql = "SELECT x_direction, y_direction, colour FROM roverdata WHERE alien_present = 'yes'" 
     }
     else if(itemtoget == "buildings"){
-        var sql = "SELECT x_direction, y_direction FROM test WHERE building_present = 'yes'"
+        var sql = "SELECT x_direction, y_direction FROM roverdata WHERE building_present = 'yes'"
     }
     else if(itemtoget == "rover"){
-        var sql = "SELECT id, x_direction, y_direction, angle, battery_life FROM test ORDER BY id DESC LIMIT 6 " //get last 7 rovers
+        var sql = "SELECT id, x_direction, y_direction, angle, battery_life FROM roverdata ORDER BY id DESC LIMIT 6 " //get last 6 rovers
     }
     else if (itemtoget == "fan"){
-        var sql = "SELECT x_direction, y_direction FROM test WHERE infrastructure_present = 'yes'"
+        var sql = "SELECT x_direction, y_direction FROM roverdata WHERE infrastructure_present = 'yes'"
     }
 
    let result = await connection.awaitQuery(sql, [itemtoget], (err,rows)=>{ //use itemtoget in query to db 
@@ -49,7 +48,6 @@ const querydb = async (itemtoget)=> {
 }
 
 const senddb = async(itemtosend) =>{
-    //see brainstorm file
     let values = []
     let power = ''
     if(itemtosend === "true"){
@@ -61,27 +59,51 @@ const senddb = async(itemtosend) =>{
         values = ['off']
     }
     else{
-    let dist = itemtosend.distance.slice(0, -2) //remove cm, dunno if turn into string instead of num?
-    let ang = itemtosend.angle.slice(0, -1) //remove º, maybe stringify instead on num
-    let power = itemtosend.power
-    values = [dist, ang, power];//send dist and ang, 
-    
-    var sql = "INSERT INTO remote (distance, angle, power) VALUES (?)"; //remote is db for remote control?
+    let dist = itemtosend.distance
+    let ang = itemtosend.angle
+
+    //pad dist to 4 chars:
+    if(dist.charAt(0) !== '-'){
+        dist = dist.padStart(4, "0")
     }
+
+    else if(dist.charAt(0) === '-'){
+        dist =  dist.slice(1)
+        dist = dist.padStart(3, "0")
+        dist = '-'+dist
+    }
+
+    //pad ang to 4 chars
+    if(ang.charAt(0) !== '-'){
+        ang = ang.padStart(4, "0")
+    }
+
+    else if(ang.charAt(0) === '-'){
+        ang =  ang.slice(1)
+        ang = ang.padStart(3, "0")
+        ang = '-'+ang
+    }
+
+
+    let power = itemtosend.power //add power later
+    values = [dist, ang]; //send dist and ang, add power later 
+    
+    
+    var sql = "INSERT INTO manualcontrol (distance, degrees) VALUES (?)"; //add power later
+    }
+    if((values[0] !== "0000") || (values[1]!== "0000")){ //not adding in 0's atm
+    console.log("sending:...")
     console.log("Sql: ", sql, "Values: ",values)
+
     let result = await connection.awaitQuery(sql, [values], function (err, result) {
         if (!!err){
             console.log(err);
             return(err);
         }
-        else{
-        }
-
+        else{}
     })
-
-    
-    return result;
-
+    }   
+    //return result;
 }
 
 module.exports = {
