@@ -14,14 +14,6 @@ class Map extends React.Component {
       windowSize = "display";
     }
 
-    // CREATE EMPTY MAP
-    var canvas = document.getElementById(windowSize);
-    var ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // ctx.fillStyle = "rgb(143, 141, 140)";
-    // ctx.rect(0, 0, canvas.width, canvas.height);
-    // ctx.fill();
-
     // GET ALIEN POS
     const a0Pos = document.getElementById("a0").getElementsByClassName("pos")[0].innerHTML.split(',');
     const a1Pos = document.getElementById("a1").getElementsByClassName("pos")[0].innerHTML.split(',');
@@ -38,9 +30,128 @@ class Map extends React.Component {
     const fPos = document.getElementById("fan").getElementsByClassName("pos")[0].innerHTML.split(',');
     const angle = parseInt(document.getElementById("angleValue").innerHTML);
 
-    // CUSTOM ROVER POS OFFSET
-    rPos[0] = parseInt(rPos[0])+10;
-    rPos[1] = parseInt(rPos[1]);
+    var corner = document.getElementsByClassName("btnCorner")[0].innerHTML.split(": ").pop();
+    var xmult = 1;
+    var ymult = 1;
+    var xoffset = 0;
+    var yoffset = 0;
+
+    // CREATE EMPTY MAP
+    var canvas = document.getElementById(windowSize);
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // CORNER SQUARES
+    ctx.fillStyle = "rgb(54, 54, 54)";
+    ctx.strokeRect(0, 0, 40, 40);
+    ctx.rect(0, 0, 40, 40);
+    
+
+    ctx.fillStyle = "rgb(54, 54, 54)";
+    ctx.strokeRect(canvas.width - 40, 0, 40, 40);
+    ctx.rect(canvas.width - 40, 0, 40, 40);
+
+    ctx.fillStyle = "rgb(54, 54, 54)";
+    ctx.strokeRect(0, canvas.height - 40, 40, 40);
+    ctx.rect(0, canvas.height -  40, 40, 40);
+
+    ctx.fillStyle = "rgb(54, 54, 54)";
+    ctx.strokeRect(canvas.width - 40, canvas.height - 40, 40, 40);
+    ctx.rect(canvas.width - 40, canvas.height - 40, 40, 40);
+    ctx.fill();
+
+    // LETTERS AT CORNERS
+    ctx.beginPath();
+    ctx.font = '20px Sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    if (corner[0] === "A"){
+      ctx.fillStyle = "rgb(246,190,0)";
+      ctx.fillText("A", 20, 20);
+      ctx.fillStyle = "rgb(94, 94, 94)";
+      ctx.fillText("B", canvas.width - 20, 20);
+      ctx.fillStyle = "rgb(94,94,94)";
+      ctx.fillText("C", 20, canvas.height - 20);
+      ctx.fillStyle = "rgb(94,94,94)";
+      ctx.fillText("D", canvas.width - 20, canvas.height - 20);
+      ctx.fill();
+      xmult = -1;
+      ymult = 1;
+      xoffset = 0;
+      yoffset = 0;
+      // CUSTOM ROVER POS OFFSET
+      rPos[0] = parseInt(rPos[0])-10;
+      rPos[1] = parseInt(rPos[1])+5;
+    }
+    else if (corner[0] === "B"){
+      ctx.fillStyle = "rgb(246,190,0)";
+      ctx.fillText("B", canvas.width - 20, 20);
+      ctx.fillStyle = "rgb(94, 94, 94)";
+      ctx.fillText("A", 20, 20);
+      ctx.fillStyle = "rgb(94,94,94)";
+      ctx.fillText("C", 20, canvas.height - 20);
+      ctx.fillStyle = "rgb(94,94,94)";
+      ctx.fillText("D", canvas.width - 20, canvas.height - 20);
+      xoffset = canvas.width;
+      xmult = -1;
+      // CUSTOM ROVER POS OFFSET
+      rPos[0] = parseInt(rPos[0])+10;
+      rPos[1] = parseInt(rPos[1])+5;
+    }
+    else if (corner[0] === "C"){
+      ctx.fillStyle = "rgb(94, 94, 94)";
+      ctx.fillText("A", 20, 20);
+      ctx.fillStyle = "rgb(94, 94, 94)";
+      ctx.fillText("B", canvas.width - 20, 20);
+      ctx.fillStyle = "rgb(246,190,0)";
+      ctx.fillText("C", 20, canvas.height - 20);
+      ctx.fillStyle = "rgb(94,94,94)";
+      ctx.fillText("D", canvas.width - 20, canvas.height - 20);
+      ymult = -1;
+      yoffset = canvas.height;
+      // CUSTOM ROVER POS OFFSET
+      rPos[0] = parseInt(rPos[0])+10;
+      rPos[1] = parseInt(rPos[1])+15;
+    }
+    else if (corner[0] === "D"){
+      ctx.fillStyle = "rgb(94, 94, 94)";
+      ctx.fillText("A", 20, 20);
+      ctx.fillStyle = "rgb(94, 94, 94)";
+      ctx.fillText("B", canvas.width - 20, 20);
+      ctx.fillStyle = "rgb(94, 94, 94)";
+      ctx.fillText("C", 20, canvas.height - 20);
+      ctx.fillStyle = "rgb(246,190,0)";
+      ctx.fillText("D", canvas.width - 20, canvas.height - 20);
+      xmult = 1;
+      xoffset = canvas.width;
+      ymult = -1;
+      yoffset = canvas.height;
+      // CUSTOM ROVER POS OFFSET
+      rPos[0] = parseInt(rPos[0])-15;
+      rPos[1] = parseInt(rPos[1])+15;
+    }
+    ctx.fill();
+
+    // APPLY CORNER CORRECTION
+    
+    a0Pos[0] = xoffset + xmult*parseInt(a0Pos[0]);
+    a0Pos[1] = yoffset + ymult*parseInt(a0Pos[1]);
+    console.log(a0Pos[0], a0Pos[1])
+    a1Pos[0] = xoffset + xmult*parseInt(a1Pos[0]);
+    a1Pos[1] = yoffset + ymult*parseInt(a1Pos[1]);
+    a2Pos[0] = xoffset + xmult*parseInt(a2Pos[0]);
+    a2Pos[1] = yoffset + ymult*parseInt(a2Pos[1]);
+    a3Pos[0] = xoffset + xmult*parseInt(a3Pos[0]);
+    a3Pos[1] = yoffset + ymult*parseInt(a3Pos[1]);
+    a4Pos[0] = xoffset + xmult*parseInt(a4Pos[0]);
+    a4Pos[1] = yoffset + ymult*parseInt(a4Pos[1]);
+    a5Pos[0] = xoffset + xmult*parseInt(a5Pos[0]);
+    a5Pos[1] = yoffset + ymult*parseInt(a5Pos[1]);
+    
+    rPos[0] = (xoffset + xmult*parseInt(rPos[0])).toString();
+    rPos[1] = (yoffset + ymult*parseInt(rPos[1])).toString();
+    fPos[0] = (xoffset + xmult*parseInt(fPos[0])).toString();
+    fPos[1] = (yoffset + ymult*parseInt(fPos[1])).toString();
 
     // DRAW ALL ALIENS
     for (var x in alienPos){
@@ -153,6 +264,12 @@ class Map extends React.Component {
       console.log("Rover stats updated..."); // console.log(the changes)
     });
 
+    // OBSERVES CHANGES IN CORNER ORIENTATION
+    let observeCorner = new MutationObserver(mutationRecords => {
+      this.updateMap();
+      console.log("Corner Pos updated..."); // console.log(the changes)
+    });
+
     // APPLIES OBSERVER TO ALIENS
     for (var x in aliens) {
       observeAlien.observe(document.getElementById(aliens[x]), {
@@ -182,6 +299,13 @@ class Map extends React.Component {
       subtree: true, 
       characterDataOldValue: true
     });
+    
+    observeCorner.observe(document.getElementsByClassName("btnCorner")[0], {
+      childList: true,
+      subtree: true, 
+      characterDataOldValue: true
+    });
+
 }
 
 componentWillUnmount() {

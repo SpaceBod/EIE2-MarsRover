@@ -8,13 +8,40 @@ import Map from './map';
 
 // TODO: CHANGE CORNER ABCD
 class ChangePos extends React.Component {
-
+  constructor(props) {
+    super(props);
+    // EMPTY STATE VALUES
+    this.state = {
+      corner: "A"
+    }
+  }
   changeCorner(){
+
+    if (this.state.corner === "A"){
+      this.setState({
+        corner: "B"
+      });
+    }
+    else if (this.state.corner === "B"){
+      this.setState({
+        corner: "C"
+      });
+    }
+    else if (this.state.corner === "C"){
+      this.setState({
+        corner: "D"
+      });
+    }
+    else if (this.state.corner === "D"){
+      this.setState({
+        corner: "A"
+      });
+    }
   }
   
   render() {
     return (
-      <button onClick={() => this.changeCorner()} className="btnCorner">Change Corner</button>
+      <button onClick={() => this.changeCorner()} className="btnCorner">Change Corner: {this.state.corner} </button>
     );
   }
 }
@@ -82,15 +109,15 @@ class AngleInput extends React.Component {
       console.log("DATA SENT", movement);
       const data = { body: movement };
       // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
-      // axios.post('http://localhost:3001', data)
-      axios.post('http://146.169.216.172:3003/movement', data)
+      axios.post('c3', data)
+      // axios.post('http://192.168.137.48:3003/movement', data)
       .then((response) => {
         console.log(response);
       });
-      const endData = { body: {distance: "0cm", angle: "0°", power: "0"} };
+      const endData = { body: {distance: "0", angle: "0", power: "0"} };
       // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', endData)
-      // axios.post('http://localhost:3001', endData)
-      axios.post('http://146.169.216.172:3003/movement', endData)
+      axios.post('http://192.168.137.48:3003/movement', endData)
+      // axios.post('http://192.168.137.48:3003/movement', endData)
       
       .then((response) => {
         console.log(response);
@@ -132,7 +159,7 @@ class AngleInput extends React.Component {
           <span className="setAngleSlider__value">0</span>
         </div>
         <SetPower />
-        <button className='btn' onClick= {() => this.sendData({distance: document.getElementsByClassName("setDistSlider__value")[0].innerHTML, angle: document.getElementsByClassName("setAngleSlider__value")[0].innerHTML, power: document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1)})} >Send Instruction</button>
+        <button className='btn' onClick= {() => this.sendData({distance: document.getElementsByClassName("setDistSlider__value")[0].innerHTML.slice(0, -2), angle: document.getElementsByClassName("setAngleSlider__value")[0].innerHTML.slice(0, -1), power: document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1)})} >Send Instruction</button>
         <ChangePos />
         <div className = "status"> Remote Control
           <div className = "statusLED"></div>
@@ -194,45 +221,46 @@ class ArrowMovement extends React.Component {
     // SEND CONTROLLER OR KEY MOVEMENTS TO NODE.JS
     function sendMovement(movement){
       const now = +new Date();
-        if ((now - last > 500) || ((movement['distance'] === "0cm" ) && (movement['angle'] === "0°") && (movement['power'] === "0"))) { // 5 seconds
-          if ((movement['distance'] === "0cm" ) && (movement['angle'] === "0°") && (movement['power'] === "0")){
+        if ((now - last > 100) || ((movement['distance'] === "0" ) && (movement['angle'] === "0") && (movement['power'] === "0"))) { // 5 seconds
+          if ((movement['distance'] === "0" ) && (movement['angle'] === "0") && (movement['power'] === "0")){
             console.log("[INPUT END]")
           }
           else{
-            console.log("[INPUT SENT]");
+            console.log("[INPUT SENT]", movement);
           }
           last = now;
           const data = { body: movement };
           try{
           // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
-          // axios.post('http://localhost:3001', data)
-          axios.post('http://146.169.216.172:3003/movement', data)
+          axios.post('http://192.168.137.48:3003/movement', data)
+          // axios.post('http://192.168.137.48:3003/movement', data)
     
           .then((response) => {
             console.log(response);
           });
         }
-        catch(e){}
+        catch(e){
+        }
       }
     }
 
     // SEND MANUAL MOVEMENTS TO NODE.JS
     function sendButton(movement){
       const now = +new Date();
-        if (now - last > 500) {
+        if (now - last > 100) {
           console.log("[START SEND]");
           last = now;
           const data = { body: movement };
           // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
-          // axios.post('http://localhost:3001', data)
-          axios.post('http://146.169.216.172:3003/movement', data)
+          axios.post('http://192.168.137.48:3003/movement', data)
+          // axios.post('http://192.168.137.48:3003/movement', data)
           .then((response) => {
             console.log(response);
           });
           const endData = { body: {distance: "0cm", angle: "0°"} };
           // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', endData)
-          // axios.post('http://localhost:3001', endData)
-          axios.post('http://146.169.216.172:3003/movement', endData)
+          axios.post('http://192.168.137.48:3003/movement', endData)
+          // axios.post('http://192.168.137.48:3003/movement', endData)
           .then((response) => {
             console.log(response);
             console.log("[END SEND]");
@@ -242,13 +270,13 @@ class ArrowMovement extends React.Component {
     // SEND MANUAL MOVEMENTS TO NODE.JS
     function toggleMovement(statusToggle){
       const now = +new Date();
-        if (now - last > 500) {
+        if (now - last > 100) {
           console.log("[START TOGGLE]");
           last = now;
           const data = { body: statusToggle };
           // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
-          // axios.post('http://localhost:3001', data)
-          axios.post('http://146.169.216.172:3003/togglemovement', data)
+          axios.post('http://192.168.137.48:3003/movement', data)
+          // axios.post('http://146.169.221.23:3003/togglemovement', data)
           .then((response) => {
             console.log(response);
             console.log("[END TOGGLE]")
@@ -359,16 +387,16 @@ class ArrowMovement extends React.Component {
           if (rt === true){
             fcount = 1;
             tcount = 0;
-            rtPow = Math.round(varRT.value);
+            rtPow = Math.round(varRT.value * 100) / 100;
             
             if (axisLR > 0.5){
-              sendMovement({distance:"2cm", angle: "5°", power:rtPow * power});
+              sendMovement({distance:"2", angle: "5", power:rtPow * power});
             }
             if (axisLR < -0.5){
-              sendMovement({distance:"2cm", angle: "-5°", power:rtPow * power});
+              sendMovement({distance:"2", angle: "-5", power:rtPow * power});
             }
             else{
-              sendMovement({distance:"2cm", angle: "0°", power:rtPow * power});
+              sendMovement({distance:"2", angle: "0", power:rtPow * power});
             }
             forwards();
           }
@@ -383,13 +411,13 @@ class ArrowMovement extends React.Component {
             tcount = 0;
             ltPow = Math.round(varLT.value);
             if (axisLR > 0.5){
-              sendMovement({distance:"-2cm", angle: "5°", power:ltPow * power});
+              sendMovement({distance:"-2", angle: "5", power:ltPow * power});
             }
             if (axisLR < -0.5){
-              sendMovement({distance:"-2cm", angle: "-5°", power:ltPow * power});
+              sendMovement({distance:"-2", angle: "-5", power:ltPow * power});
             }
             else{
-              sendMovement({distance:"-2cm", angle: "0°", power:ltPow * power});
+              sendMovement({distance:"-2", angle: "0", power:ltPow * power});
             }
             backwards();
           }
@@ -402,7 +430,7 @@ class ArrowMovement extends React.Component {
           if (axisLR > 0.5){
             rcount = 1;
             tcount = 0;
-            sendMovement({distance:"0cm", angle: "5°", power: power});
+            sendMovement({distance:"0", angle: "5", power: power});
             right();
           }
           // RIGHT ROTATE RESET
@@ -414,7 +442,7 @@ class ArrowMovement extends React.Component {
           if (axisLR < -0.5){
             lcount = 1;
             tcount = 0;
-            sendMovement({distance:"0cm", angle: "-5°", power: power});
+            sendMovement({distance:"0", angle: "-5", power: power});
             left();
           }
           // LEFT ROTATE RESET
@@ -426,7 +454,9 @@ class ArrowMovement extends React.Component {
           total = fcount + bcount + rcount + lcount;
           if (total === 0 && tcount !== 1){
             tcount = 1;
-            sendMovement({distance:"0cm", angle: "0°", power:"0"});
+            sendMovement({distance:"0", angle: "0", power:"0"});
+            sendMovement({distance:"0", angle: "0", power:"0"});
+            sendMovement({distance:"0", angle: "0", power:"0"});
           }
           // SLIDER CONTROL DPAD
           // DISTANCE POSITIVE
@@ -484,7 +514,7 @@ class ArrowMovement extends React.Component {
           // BUTTON A: SEND MANUAL DISTANCE + ANGLE
           if (aButton === true && acount === 0){
             acount = 1;
-            sendButton({distance: document.getElementsByClassName("setDistSlider__value")[0].innerHTML, angle: document.getElementsByClassName("setAngleSlider__value")[0].innerHTML});
+            sendButton({distance: document.getElementsByClassName("setDistSlider__value")[0].innerHTML.slice(0, -2), angle: document.getElementsByClassName("setAngleSlider__value")[0].innerHTML.slice(0, -1), power: document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1)});
             document.getElementsByClassName("btn")[0].style.top="6px";
           }
           if (aButton === false && acount === 1){
@@ -517,22 +547,22 @@ class ArrowMovement extends React.Component {
     document.addEventListener('keydown', function(event) {
       if (event.key === "w" && send === true) {
         const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
-        sendMovement({distance:"2cm", angle: "0°", power:power});
+        sendMovement({distance:"2", angle: "0", power:power});
         forwards();
       }
       else if (event.key === "a" && send === true) {
         const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
-        sendMovement({distance:"0cm", angle: "-5°", power:power});
+        sendMovement({distance:"0", angle: "-5", power:power});
         left();
       }
       else if (event.key === "s" && send === true) {
         const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
-        sendMovement({distance:"-2cm", angle: "0°", power:power});
+        sendMovement({distance:"-2", angle: "0", power:power});
         backwards();
       }
       else if (event.key === "d" && send === true) {
         const power = parseInt(document.getElementsByClassName("setPowerSlider__value")[0].innerHTML.slice(0, -1));
-        sendMovement({distance:"0cm", angle: "5°", power:power});
+        sendMovement({distance:"0", angle: "5", power:power});
         right();
       }
     
@@ -541,19 +571,19 @@ class ArrowMovement extends React.Component {
   // WASD KEY MOVEMENT UP
   document.addEventListener('keyup', function(event) {
     if (event.key === "w" && send === true) {
-      sendMovement({distance:"0cm", angle: "0°", power:"0"});
+      sendMovement({distance:"0", angle: "0", power:"0"});
       forwardsReset();
     }
     else if (event.key === "a" && send === true) {
-      sendMovement({distance:"0cm", angle: "0°", power:"0"});
+      sendMovement({distance:"0", angle: "0", power:"0"});
       leftReset();
     }
     else if (event.key === "s" && send === true) {
-      sendMovement({distance:"0cm", angle: "0°", power:"0"});
+      sendMovement({distance:"0", angle: "0", power:"0"});
       backwardsReset();
     }
     else if (event.key === "d" && send === true) {
-      sendMovement({distance:"0cm", angle: "0°", power:"0"});
+      sendMovement({distance:"0", angle: "0", power:"0"});
       rightReset();
     }
   });
@@ -567,8 +597,8 @@ class ArrowMovement extends React.Component {
       console.log("[REMOTE ENABLED]");
       const data = { body: "true" };
       // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
-      // axios.post('http://localhost:3001', data)
-      axios.post('http://146.169.216.172:3003/togglemovement', data)
+      axios.post('http://192.168.137.48:3003/movement', data)
+      //axios.post('http://146.169.221.23:3003/togglemovement', data)
       .then((response) => {
         console.log(response);
         console.log("[END TOGGLE]")
@@ -580,8 +610,8 @@ class ArrowMovement extends React.Component {
       console.log("[REMOTE DISABLED]");
       const data = { body: "false" };
       // axios.post('http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/displaymovement', data)
-      // axios.post('http://localhost:3001', data)
-      axios.post('http://146.169.216.172:3003/togglemovement', data)
+      axios.post('http://192.168.137.48:3003/movement', data)
+      // axios.post('http://146.169.221.23:3003/togglemovement', data)
       .then((response) => {
         console.log(response);
         console.log("[END TOGGLE]")

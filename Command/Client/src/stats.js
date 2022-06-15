@@ -38,7 +38,7 @@ class Stats extends React.Component {
     }
   // GET URL AND SAVE RESPONSE DATA
   getRover () {
-    return axios.get("http://ec2-18-133-76-249.eu-west-2.compute.amazonaws.com:3003/getrover")
+    return axios.get("http:146.169.208.70:3003/getrover")
         .then(response => {
           this.response = response.data
           return this.response
