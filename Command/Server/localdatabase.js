@@ -6,8 +6,8 @@ var app = express();
 app.use(cors())
 
 const connection = mysql.createConnection({ //info on database + create connection
-    host: "146.169.196.124",// 127.0.0.1 is me
-    database:"esp32_data",  //mine is roverdata, for esp: esp32_data
+    host: "146.169.202.58",// 127.0.0.1 is me
+    database:"rover_data",  //mine is roverdata, for esp: rover_data
     user:"savraj", // me is root, for esp: savraj
     password:"password" // me is pass, for esp: password
 })
@@ -21,16 +21,16 @@ connection.connect(err=>{err? //connect to sql database
 const querydb = async (itemtoget)=> {
 
     if(itemtoget == "aliens"){
-        var sql = "SELECT x_direction, y_direction, colour FROM roverdata WHERE alien_present = 'yes'" 
+        var sql = "SELECT alien_coord, alien_colour FROM post_data " 
     }
     else if(itemtoget == "buildings"){
-        var sql = "SELECT x_direction, y_direction FROM roverdata WHERE building_present = 'yes'"
+        var sql = "SELECT building_coord FROM post_data"
     }
     else if(itemtoget == "rover"){
-        var sql = "SELECT id, x_direction, y_direction, angle, battery_life FROM roverdata ORDER BY id DESC LIMIT 6 " //get last 6 rovers
+        var sql = "SELECT id, rover_coord, rover_angle FROM post_data ORDER BY id DESC LIMIT 3 " //get last 6 rovers
     }
     else if (itemtoget == "fan"){
-        var sql = "SELECT x_direction, y_direction FROM roverdata WHERE infrastructure_present = 'yes'"
+        var sql = "SELECT fan_coord FROM post_data"
     }
 
    let result = await connection.awaitQuery(sql, [itemtoget], (err,rows)=>{ //use itemtoget in query to db 
@@ -47,6 +47,8 @@ const querydb = async (itemtoget)=> {
     return result;
 }
 
+//OLD METHOD, NOT USED ANYMORE:
+/*
 const senddb = async(itemtosend) =>{
     let values = []
     let power = ''
@@ -105,9 +107,9 @@ const senddb = async(itemtosend) =>{
     }   
     //return result;
 }
-
+*/
 module.exports = {
 
-    querydb,
-    senddb
+    querydb
+    
 }

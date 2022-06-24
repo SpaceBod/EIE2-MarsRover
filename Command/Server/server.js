@@ -2,7 +2,7 @@ const express = require('express');
 const server = express();
 const fs = require('fs')
 const _ = require('lodash')
-const { addAlien, getAliens, addBuilding, getBuildings, addFan, getFans, addRover, getRover, countdeleteRover } = require('./dynamo'); //get in all dynamo functions
+const { addAlien, getAliens, addBuilding, getBuildings, addFan, getFans, addRover, getRover, countdeleteRover, delaliens } = require('./dynamo'); //get in all dynamo functions
 const {querydb, senddb} = require('./localdatabase') //get in sql functions
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -11,11 +11,12 @@ const { vary } = require('express/lib/response');
 const { toNumber } = require('lodash');
 const mysql = require(`mysql-await`);// do: npm install mysql-await
 const dgram = require('dgram');
+const { contentDisposition } = require('express/lib/utils');
 
 //for UDP:
 const client = dgram.createSocket('udp4');
 const PORT = 3004; 
-const HOST = '192.168.137.167'; //pass in HOST (laptop hotspot ip) as number after node server, eg: node server 192.168.138.70
+const HOST = '192.168.137.167'; //put in HOST (laptop hotspot ip)
 
 server.use(cors())
 server.use(bodyParser.urlencoded({extended: true}))
@@ -41,12 +42,18 @@ server.get("/getaliens", async(req,res) =>{ //get mysql and dynamodb, compare, a
    let aws = []
 
    useableresp.forEach(element => {
-        let x = element.x_direction
-        let y = element.y_direction
-        let coord = x+''+', '+y+''
-        let colour = element.colour+''
 
+        if(element.alien_coord != null){
+        let tempcoord = element.alien_coord
+        let comma = tempcoord.indexOf(",");
+        let coord = tempcoord.substring(0, comma+1) + " " + tempcoord.substring(comma+1) //put space into coord: 20,30 -> 20, 30
+
+        let colour = element.alien_colour+''
         local.push({coord, colour})
+        }
+        else{
+            
+        }
     });
        
     for(let i in items){
@@ -60,13 +67,16 @@ server.get("/getaliens", async(req,res) =>{ //get mysql and dynamodb, compare, a
         addAlien(element)
     })
 
-    let newaws = await getAliens()
     if(diff.length != 0){
-    res.send("aliens added")
-    }
+        console.log("aliens added")
+        }
     else{
-        res.send("nothing added g")
+        console.log("nothing added")
     }
+
+    let newaws = await getAliens()
+    res.send(newaws.Items) //CHANGE TO THIS
+    
 })
 
 server.get("/getbuildings", async(req,res)=>{
@@ -80,11 +90,17 @@ server.get("/getbuildings", async(req,res)=>{
     let aws = []
 
     useableresp.forEach(element => { //buildings only identified by coord?
-        let x = element.x_direction
-        let y = element.y_direction
-        let coord = x+''+', '+y+''
-
+ 
+        if(element.building_coord != null){
+        let tempcoord = element.building_coord
+        let comma = tempcoord.indexOf(",");
+        let coord = tempcoord.substring(0, comma+1) + " " + tempcoord.substring(comma+1) 
         local.push({coord})
+        }
+        else{
+        }
+
+        
     });
 
     for(let i in items){ //add in aws items
@@ -99,14 +115,16 @@ server.get("/getbuildings", async(req,res)=>{
         addBuilding(element)
     })
 
-    let newaws = await getBuildings()
-    //res.send(newaws)
     if(diff.length != 0){
-        res.send("rover(s) added")
+        console.log("building added")
         }
-        else{
-            res.send("nothing added g")
-        }
+    else{
+        console.log("nothing added")
+    }
+
+    let newaws = await getBuildings()
+    res.send(newaws.Items) //change to this
+    
    
 })
 
@@ -115,14 +133,14 @@ server.get("/getrover", async(req,res) =>{
 
     let resp = await querydb("rover") //get sql stuff
     let useableresp = JSON.parse(JSON.stringify(resp));
-    console.log("here")
 
     local = []
     useableresp.forEach(element => { //angle, battery, coords needed
-        let x = element.x_direction
-        let y = element.y_direction
-        let coord = x+''+', '+y+''
-        let angle = element.angle+''
+        
+        let tempcoord = element.rover_coord
+        let comma = tempcoord.indexOf(",");
+        let coord = tempcoord.substring(0, comma+1) + " " + tempcoord.substring(comma+1) 
+        let angle = element.rover_angle+'' //conv int to string
         let battery = element.battery_life+''
 
         local.push({coord, angle, battery})
@@ -131,15 +149,13 @@ server.get("/getrover", async(req,res) =>{
     if(resp != "error"){ //dont add stuff if there is an error in fetching - also dont want to delete items as addrover does that
         await countdeleteRover()//get rid of everything rn
 
-        local.forEach((element)=>{
-            console.log("adding: ", element)
+        await local.forEach((element)=>{
             addRover(element).then()
      })
     }   
 
-    let newestrover = await getRover("all")
-    
-    res.send(newestrover.Items.at(-1))//return last (newest) item
+    console.log("LOCAL ",local[0])
+    res.send(local[0])//return last (newest) item - dont need to query dynamo for this - rip straight off latest sql
 
 })
 
@@ -155,11 +171,16 @@ server.get("/getfan", async(req,res)=> {
     let aws = []
 
     useableresp.forEach(element => { //just coords needed, maybe add confidence param?
-        let x = element.x_direction
-        let y = element.y_direction
-        let coord = x+''+', '+y+''
+
+        if(element.fan_coord != null){
+        let tempcoord = element.fan_coord
+        let comma = tempcoord.indexOf(",");
+        let coord = tempcoord.substring(0, comma+1) + " " + tempcoord.substring(comma+1) 
 
         local.push({coord})
+        }
+        else{
+        }
     });
 
     for(let i in items){ //push in aws items
@@ -174,32 +195,17 @@ server.get("/getfan", async(req,res)=> {
         addFan(element)
     })
 
-    let newaws = await getFans()
-    //res.send(newaws.Items)
     if(diff.length != 0){
-        res.send("fan(s) added")
+        console.log("fan added")
         }
-        else{
-            res.send("nothing added g")
-        }
+    else{
+        console.log("nothing added")
+    }
+
+    let newaws = await getFans()
+    res.send(newaws.Items) //CHANGE TO THIS
+    
 })
-
-
-/*server.post("/movement", (req, res)=>{ //for remote movement
-
-    let body = req.body;
-    let instr = body.body;
-
-    senddb(instr)
-   // let queue = []
-   // queue.push(instr)
-   // queue.forEach((element)=>{
-   //     await senddb(element) //send obj with dist, ang in it
-   //     queue.shift()//remove oldest (1st) item as just sent
-   // })
-  
-    res.send("recieved")
-})*/
 
 server.post("/movement", (req,res)=>{
 
@@ -226,78 +232,24 @@ server.post("/togglemovement", (req,res)=>{
 
     let body = req.body;
     let toggle = body.body;
-    
-    
-   // senddb(toggle); //add this later - does the toggling remote control off/on
+    let instr = toggle+''
 
+    const message = Buffer.from(instr, "utf8");
+    client.send(message, 0, message.length, PORT, HOST, function(err, bytes) {
+      if (err) {
+          console.error(`UDP toggle control send error:`, err);
+      } else {
+          console.log(`UDP toggle control instr sent to ${HOST}:${PORT}`);
+
+      }
     res.send(JSON.stringify("Remote set to: ", toggle))
 })
- 
-server.get("/addalienmanual", (req,res)=>{
-
-	res.sendFile("./form.html", {root: __dirname})
-})
-server.post("/addalienmanual", async(req,res)=>{
-
-    let info = req.body
-    let send = {coord: info.coord, colour: info.colour}
-    await addAlien(send)
-    res.redirect("/addalienmanual")
-    console.log("alien added: ", send)
 })
 
-/*server.get("/addalienmanual", async(req,res)=>{
+server.get("/delaliens", async(req,res)=>{
 
-	//let coord = req.body.coord;
-	//let colour = req.body.colour;
-	const alien = {coord: "-70, 300", colour: "pink"}
-	console.log(alien);
-    try{
-        const newAlien = await addAlien(alien);
-       // res.redirect("/addalienmanual")
-        console.log("alien added hopefully")
-        res.send("done")
-    }
-    catch(error){
-        console.log(error)
-        res.status(500).json({err: "gone wrong ooft"})
-    }
-    
-})*/
-
-server.get("/localmanual", (req,res)=>{
-
-    let input = {distance: "4cm", angle: "90º"}
-    senddb(input)
-    res.send(input)
-
+    await delaliens()
+    res.send("aliens deleted")
 })
 
-server.get("/addcommand", (req,res)=>{
-
-    res.sendFile("./comform.html", {root: __dirname})
-})
-
-server.post("/addcommand", (req,res)=>{
-    
-    let r = req.body
-    let d = r.dist
-    let a = r.ang
-    let inp = {distance: d+'cm', angle: a+'º'}
-    console.log( r, d, a)
-    senddb(inp)
-    res.redirect("/addcommand")
-    
-})
-    //delete oldest: DELETE FROM roverdata WHERE id IS NOT NULL order by id asc LIMIT 1
-    //get oldest: SELECT * FROM roverdata WHERE id IS NOT NULL ORDER BY id ASC LIMIT 1
-
-
- /*   if(done == true){
-        do sql querys above
-        set done = false
-        send get sql result to drive
-
-    }
-    */
 
