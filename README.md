@@ -1,2 +1,2 @@
 # MarsRover
-Group OSA 
+Group 20 / OSA2 
