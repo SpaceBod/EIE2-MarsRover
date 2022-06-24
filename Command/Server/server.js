@@ -246,35 +246,6 @@ server.post("/togglemovement", (req,res)=>{
 })
 })
 
-server.get("/addalienmanual", (req,res)=>{
-
-	res.sendFile("./alienform.html", {root: __dirname})
-})
-server.post("/addalienmanual", async(req,res)=>{
-
-    let info = req.body
-    let send = {coord: info.coord, colour: info.colour}
-    await addAlien(send)
-    res.redirect("/addalienmanual")
-    console.log("alien added: ", send)
-})
-
-server.get("/addcommand", (req,res)=>{
-
-    res.sendFile("./comform.html", {root: __dirname})
-})
-
-server.post("/addcommand", (req,res)=>{
-    
-    let r = req.body
-    let d = r.dist
-    let a = r.ang
-    let inp = {distance: d+'cm', angle: a+'º'}
-    console.log( r, d, a)
-    senddb(inp)
-    res.redirect("/addcommand")
-    
-})
 server.get("/delaliens", async(req,res)=>{
 
     await delaliens()
