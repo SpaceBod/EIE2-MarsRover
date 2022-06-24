@@ -11,8 +11,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-//EEE_IMGPROC defines
-#define EEE_IMGPROC_MSG_START ('R'<<16 | 'B'<<8 | 'B')
 
 //offsets
 #define EEE_IMGPROC_STATUS 0
@@ -193,7 +191,7 @@ int main()
         OV8865SetGain(gain);
         Focus_Init();
 
-        FILE* ser = fopen("/dev/uart_0", "rb+");
+        FILE* ser = fopen("/dev/uart_2", "rb+");
         if(ser){
         	printf("Opened UART\n");
         } else {

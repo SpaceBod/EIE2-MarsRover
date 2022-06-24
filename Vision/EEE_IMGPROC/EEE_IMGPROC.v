@@ -71,19 +71,28 @@ parameter BB_COL_DEFAULT = 24'h00ff00;
 
 
 wire [7:0]   red, green, blue, grey;
-wire [11:0]   hue, sat, val;
+wire [9:0]   hue, val;
+wire [17:0]  sat;
 wire [7:0]   red_out, green_out, blue_out;
 
 wire         sop, eop, in_valid, out_ready;
 ////////////////////////////////////////////////////////////////////////
+
+// Average 3 consecutive pixels
+/*
+wire [7:0] redpixel, greenpixel, bluepixel;
+assign redpixel = (red_2 + 2*red_1 + red) >> 2;
+assign greenpixel = (green_2 + 2*green_1 + green) >> 2;
+assign bluepixel = (blue_2 + 2*blue_1 + blue) >> 2;
+*/
 
 // RGB to HSV conversion
 wire [7:0] cmax, cmin;
 assign cmax = ((red >= green) && (red >= blue)) ? red : ((green >= blue) && (green >= red)) ? green : blue;
 assign cmin = ((red <= green) && (red <= blue)) ? red : ((green <= blue) && (green <= red)) ? green : blue;
 
-assign hue = ((cmax - cmin) == 0) ? 10'd0 : (cmax == red) ? (((170*(green - blue)/(cmax - cmin)) + 1020) % 1020) : (cmax == green) ? (((170*(blue - red)/(cmax - cmin)) + 340) % 1020) : (((170*(red - green)/(cmax - cmin)) + 680) % 1020);
-assign sat = (cmax == 0) ? 10'd0 : (1024*(cmax - cmin)/cmax);
+assign hue = ((cmax - cmin) == 0) ? 10'd0 : (cmax == red) ? (((green > blue) ? ((170*(green-blue)/(cmax - cmin)) + 1020) : (1020 - (170*(blue-green))/(cmax - cmin))) % 1020) : (cmax == green) ? (((blue > red) ? ((170*(blue-red)/(cmax - cmin)) + 340) : (340 - (170*(red-blue))/(cmax - cmin))) % 1020) : (((red > green) ? ((170*(red-green)/(cmax - cmin)) + 680) : (680 - (170*(green-red))/(cmax - cmin))) % 1020);
+assign sat = (cmax == 0) ? 10'd0 : ((cmax - cmin)<<10/cmax);
 assign val = cmax << 2;
 
 // Detect colours
@@ -94,19 +103,30 @@ assign blue_detect = hue >= 290 && hue <= 747 && sat >= 0 && sat <= 717 && val >
 assign teal_detect = hue >= 223 && hue <= 436 && sat >= 313 && sat <= 1024 && val >= 230 && val <= 592;
 assign orange_detect = hue >= 70 && hue <= 177 && sat >= 212 && sat <= 984 && val >= 929 && val <= 1024;
 assign red_detect = (hue >= 995 || hue <= 177) && sat >= 596 && sat <= 1024 && val >= 669 && val <= 1024;
-assign fuchsia_detect = hue >= 37 && hue <= 91 && sat >= 173 && sat <= 1024 && val >= 957 && val <= 1024;
+assign fuchsia_detect = hue >= 37 && hue <= 100 && sat >= 173 && sat <= 1024 && val >= 0 && val <= 1024;
+
+
+wire red_on, green_on, blue_on, teal_on, orange_on, fuchsia_on;
+
+assign red_on = red_detect & red_detect_1 & red_detect_2;
+assign green_on = green_detect & green_detect_1 & green_detect_2;
+assign blue_on = blue_detect & blue_detect_1 & blue_detect_2;
+assign teal_on = teal_detect & teal_detect_1 & teal_detect_2;
+assign orange_on = orange_detect & orange_detect_1 & orange_detect_2;
+assign fuchsia_on = fuchsia_detect & fuchsia_detect_1 & fuchsia_detect_2;
+
 
 // Find boundary of cursor box
 
 // Highlight detected areas
 wire [23:0] fuchsia_high, orange_high, red_high, teal_high, blue_high, green_high;
 assign grey = green[7:1] + red[7:2] + blue[7:2]; //Grey = green/2 + red/4 + blue/4
-assign red_high  =  red_detect ? {8'hff, 8'h0, 8'h0} : {grey, grey, grey};
-assign green_high  =  green_detect ? {8'h0, 8'hff, 8'h0} : red_high;
-assign teal_high  =  teal_detect ? {8'h0, 8'h80, 8'h80} : green_high;
-assign orange_high  =  orange_detect ? {8'hff, 8'ha5, 8'h0} : teal_high;
-assign blue_high  =  blue_detect ? {8'h0, 8'h0, 8'hff} : orange_high;
-assign fuchsia_high  =  fuchsia_detect ? {8'hff, 8'h0, 8'hff} : blue_high;
+assign red_high  =  red_on ? {8'hff, 8'h0, 8'h0} : {grey, grey, grey};
+assign green_high  =  green_on ? {8'h0, 8'hff, 8'h0} : red_high;
+assign blue_high  =  blue_on ? {8'h0, 8'h0, 8'hff} : green_high;
+assign orange_high  =  orange_on ? {8'hff, 8'ha5, 8'h0} : blue_high;
+assign teal_high  =  teal_on ? {8'h0, 8'h80, 8'h80} : orange_high;
+assign fuchsia_high  =  fuchsia_on ? {8'hff, 8'h0, 8'hff} : teal_high;
 
 // Show bounding box
 wire [23:0] new_image;
@@ -122,7 +142,7 @@ assign new_image = bb_active_red ? {8'hff, 8'h0, 8'h0} : bb_active_green ? {8'h0
 // Switch output pixels depending on mode switch
 // Don't modify the start-of-packet word - it's a packet descriptor
 // Don't modify data in non-video packets
-assign {red_out, green_out, blue_out} = (mode & ~sop & packet_video) ? new_image : {red,green,blue};
+assign {red_out, green_out, blue_out} = (mode & ~sop & packet_video) ? new_image : {red,green,blue}; //redpixel,greenpixel,bluepixel
 
 //Count valid pixels to tget the image coordinates. Reset and detect packet type on Start of Packet.
 reg [10:0] x, y;
@@ -147,13 +167,13 @@ end
 //Find first and last red pixels
 reg [10:0] red_x_min, red_y_min, red_x_max, red_y_max;
 always@(posedge clk) begin
-	if (red_detect & in_valid) begin	//Update bounds when the pixel is red
+	if (red_on & in_valid) begin	//Update bounds when the pixel is red
 		if (x < red_x_min) red_x_min <= x;
 		if (x > red_x_max) red_x_max <= x;
 		if (y < red_y_min) red_y_min <= y;
 		if (y > red_y_max) red_y_max <= y;
 	end
-	if (sop & in_valid) begin	//Reset bounds on start of packet
+	if (sop & in_valid) begin	
 		red_x_min <= IMAGE_W-11'h1;
 		red_x_max <= 0;
 		red_y_min <= IMAGE_H-11'h1;
@@ -163,13 +183,13 @@ end
 
 reg [10:0] green_x_min, green_y_min, green_x_max, green_y_max;
 always@(posedge clk) begin
-	if (green_detect & in_valid) begin	//Update bounds when the pixel is green
+	if (green_on & in_valid) begin	//Update bounds when the pixel is green
 		if (x < green_x_min) green_x_min <= x;
 		if (x > green_x_max) green_x_max <= x;
 		if (y < green_y_min) green_y_min <= y;
 		if (y > green_y_max) green_y_max <= y;
 	end
-	if (sop & in_valid) begin	//Reset bounds on start of packet
+	if (sop & in_valid) begin	
 		green_x_min <= IMAGE_W-11'h1;
 		green_x_max <= 0;
 		green_y_min <= IMAGE_H-11'h1;
@@ -179,13 +199,13 @@ end
 
 reg [10:0] blue_x_min, blue_y_min, blue_x_max, blue_y_max;
 always@(posedge clk) begin
-	if (blue_detect & in_valid) begin	//Update bounds when the pixel is blue
+	if (blue_on & in_valid) begin	//Update bounds when the pixel is blue
 		if (x < blue_x_min) blue_x_min <= x;
 		if (x > blue_x_max) blue_x_max <= x;
 		if (y < blue_y_min) blue_y_min <= y;
 		if (y > blue_y_max) blue_y_max <= y;
 	end
-	if (sop & in_valid) begin	//Reset bounds on start of packet
+	if (sop & in_valid) begin	
 		blue_x_min <= IMAGE_W-11'h1;
 		blue_x_max <= 0;
 		blue_y_min <= IMAGE_H-11'h1;
@@ -195,13 +215,13 @@ end
 
 reg [10:0] fuchsia_x_min, fuchsia_y_min, fuchsia_x_max, fuchsia_y_max;
 always@(posedge clk) begin
-	if (fuchsia_detect & in_valid) begin	//Update bounds when the pixel is fuchsia
+	if (fuchsia_on & in_valid) begin	//Update bounds when the pixel is fuchsia
 		if (x < fuchsia_x_min) fuchsia_x_min <= x;
 		if (x > fuchsia_x_max) fuchsia_x_max <= x;
 		if (y < fuchsia_y_min) fuchsia_y_min <= y;
 		if (y > fuchsia_y_max) fuchsia_y_max <= y;
 	end
-	if (sop & in_valid) begin	//Reset bounds on start of packet
+	if (sop & in_valid) begin	
 		fuchsia_x_min <= IMAGE_W-11'h1;
 		fuchsia_x_max <= 0;
 		fuchsia_y_min <= IMAGE_H-11'h1;
@@ -211,13 +231,13 @@ end
 
 reg [10:0] orange_x_min, orange_y_min, orange_x_max, orange_y_max;
 always@(posedge clk) begin
-	if (orange_detect & in_valid) begin	//Update bounds when the pixel is orange
+	if (orange_on & in_valid) begin	//Update bounds when the pixel is orange
 		if (x < orange_x_min) orange_x_min <= x;
 		if (x > orange_x_max) orange_x_max <= x;
 		if (y < orange_y_min) orange_y_min <= y;
 		if (y > orange_y_max) orange_y_max <= y;
 	end
-	if (sop & in_valid) begin	//Reset bounds on start of packet
+	if (sop & in_valid) begin	
 		orange_x_min <= IMAGE_W-11'h1;
 		orange_x_max <= 0;
 		orange_y_min <= IMAGE_H-11'h1;
@@ -227,13 +247,13 @@ end
 
 reg [10:0] teal_x_min, teal_y_min, teal_x_max, teal_y_max;
 always@(posedge clk) begin
-	if (teal_detect & in_valid) begin	//Update bounds when the pixel is teal
+	if (teal_on & in_valid) begin	//Update bounds when the pixel is teal
 		if (x < teal_x_min) teal_x_min <= x;
 		if (x > teal_x_max) teal_x_max <= x;
 		if (y < teal_y_min) teal_y_min <= y;
 		if (y > teal_y_max) teal_y_max <= y;
 	end
-	if (sop & in_valid) begin	//Reset bounds on start of packet
+	if (sop & in_valid) begin	
 		teal_x_min <= IMAGE_W-11'h1;
 		teal_x_max <= 0;
 		teal_y_min <= IMAGE_H-11'h1;
@@ -242,7 +262,9 @@ always@(posedge clk) begin
 end
 
 //Process bounding box at the end of the frame.
-reg [3:0] msg_state;
+reg [7:0] red_1, red_2, green_1, green_2, blue_1, blue_2;
+reg green_detect_1, green_detect_2, red_detect_1, red_detect_2, blue_detect_1, blue_detect_2, teal_detect_1, teal_detect_2, orange_detect_1, orange_detect_2, fuchsia_detect_1, fuchsia_detect_2;
+reg [2:0] msg_state;
 reg [10:0] left_red, right_red, top_red, bottom_red;
 reg [10:0] left_green, right_green, top_green, bottom_green;
 reg [10:0] left_blue, right_blue, top_blue, bottom_blue;
@@ -252,7 +274,7 @@ reg [10:0] left_fuchsia, right_fuchsia, top_fuchsia, bottom_fuchsia;
 reg [7:0] frame_count;
 always@(posedge clk) begin
 	if (eop & in_valid & packet_video) begin  //Ignore non-video packets
-		
+
 		//Latch edges for display overlay on next frame
 		left_red <= red_x_min;
 		right_red <= red_x_max;
@@ -288,13 +310,42 @@ always@(posedge clk) begin
 		frame_count <= frame_count - 1;
 		
 		if (frame_count == 0 && msg_buf_size < MESSAGE_BUF_MAX - 3) begin
-			msg_state <= 4'b0001;
+			msg_state <= 3'b001;
 			frame_count <= MSG_INTERVAL-1;
 		end
 	end
 	
 	//Cycle through message writer states once started
-	if (msg_state != 4'b0000) msg_state <= msg_state + 4'b0001;
+	if (msg_state == 3'b110) msg_state <= 3'b001;
+	else if (msg_state != 3'b000) msg_state <= msg_state + 3'b001;
+
+	
+	if (in_valid & ~sop & packet_video) begin
+
+		/*
+		red_1 <= red;
+		green_1 <= green;
+		blue_1 <= blue;
+
+		red_2 <= red_1;
+		green_2 <= green_1;
+		blue_2 <= blue_1;
+		*/
+
+		red_detect_1 <= red_detect;
+		red_detect_2 <= red_detect_1;
+		green_detect_1 <= green_detect;
+		green_detect_2 <= green_detect_1;
+		blue_detect_1 <= blue_detect;
+		blue_detect_2 <= blue_detect_1;
+		orange_detect_1 <= orange_detect;
+		orange_detect_2 <= orange_detect_1;
+		teal_detect_1 <= teal_detect;
+		teal_detect_2 <= teal_detect_1;
+		fuchsia_detect_1 <= fuchsia_detect;
+		fuchsia_detect_2 <= fuchsia_detect_1;
+	end
+	
 
 end
 
@@ -306,60 +357,34 @@ wire msg_buf_rd, msg_buf_flush;
 wire [7:0] msg_buf_size;
 wire msg_buf_empty;
 
-`define RED_BOX_MSG_ID "RBB"
-
 always@(*) begin	//Write words to FIFO as state machine advances
 	case(msg_state)
-		4'b0000: begin
+		3'b000: begin
 			msg_buf_in = 32'b0;
 			msg_buf_wr = 1'b0;
 		end
-		4'b0001: begin
-			msg_buf_in = {5'b0, red_x_min, 5'b0, red_y_min};	//Top left coordinate
+		3'b001: begin
+			msg_buf_in = {5'b00001, red_x_min, 5'b0, red_x_max};
 			msg_buf_wr = 1'b1;
 		end
-		4'b0010: begin
-			msg_buf_in = {5'b0, red_x_max, 5'b0, red_y_max}; //Bottom right coordinate
+		3'b010: begin
+			msg_buf_in = {5'b00010, green_x_min, 5'b0, green_x_max};
 			msg_buf_wr = 1'b1;
 		end
-		4'b0011: begin
-			msg_buf_in = {5'b0, green_x_min, 5'b0, green_y_min};	//Top left coordinate
+		3'b011: begin
+			msg_buf_in = {5'b00011, blue_x_min, 5'b0, blue_x_max};
 			msg_buf_wr = 1'b1;
 		end
-		4'b0100: begin
-			msg_buf_in = {5'b0, green_x_max, 5'b0, green_y_max}; //Bottom right coordinate
+		3'b100: begin
+			msg_buf_in = {5'b00100, orange_x_min, 5'b0, orange_x_max};
 			msg_buf_wr = 1'b1;
 		end
-		4'b0101: begin
-			msg_buf_in = {5'b0, blue_x_min, 5'b0, blue_y_min};	//Top left coordinate
+		3'b101: begin
+			msg_buf_in = {5'b00101, teal_x_min, 5'b0, teal_x_max};
 			msg_buf_wr = 1'b1;
 		end
-		4'b0110: begin
-			msg_buf_in = {5'b0, blue_x_max, 5'b0, blue_y_max}; //Bottom right coordinate
-			msg_buf_wr = 1'b1;
-		end
-		4'b0111: begin
-			msg_buf_in = {5'b0, orange_x_min, 5'b0, orange_y_min};	//Top left coordinate
-			msg_buf_wr = 1'b1;
-		end
-		4'b1000: begin
-			msg_buf_in = {5'b0, orange_x_max, 5'b0, orange_y_max}; //Bottom right coordinate
-			msg_buf_wr = 1'b1;
-		end
-		4'b1001: begin
-			msg_buf_in = {5'b0, teal_x_min, 5'b0, teal_y_min};	//Top left coordinate
-			msg_buf_wr = 1'b1;
-		end
-		4'b1010: begin
-			msg_buf_in = {5'b0, teal_x_max, 5'b0, teal_y_max}; //Bottom right coordinate
-			msg_buf_wr = 1'b1;
-		end
-		4'b1011: begin
-			msg_buf_in = {5'b0, fuchsia_x_min, 5'b0, fuchsia_y_min};	//Top left coordinate
-			msg_buf_wr = 1'b1;
-		end
-		4'b1100: begin
-			msg_buf_in = {5'b0, fuchsia_x_max, 5'b0, fuchsia_y_max}; //Bottom right coordinate
+		3'b110: begin
+			msg_buf_in = {5'b00110, fuchsia_x_min, 5'b0, fuchsia_x_max};
 			msg_buf_wr = 1'b1;
 		end
 	endcase
