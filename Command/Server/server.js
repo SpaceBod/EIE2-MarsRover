@@ -248,7 +248,7 @@ server.post("/togglemovement", (req,res)=>{
 
 server.get("/addalienmanual", (req,res)=>{
 
-	res.sendFile("./form.html", {root: __dirname})
+	res.sendFile("./alienform.html", {root: __dirname})
 })
 server.post("/addalienmanual", async(req,res)=>{
 
