@@ -145,8 +145,7 @@ const countdeleteRover = async() => {
         },
     };
 
-    theids.Items.forEach((element)=>{ //delete all rover items
-
+    for (let element of theids.Items){ //delete all rover items
         const delparams = {
             TableName: TABLE_NAME,
             Key: {
@@ -154,8 +153,8 @@ const countdeleteRover = async() => {
                 id: element.id
             },
         };
-         dynamoClient.delete(delparams).promise()
-    })
+         await dynamoClient.delete(delparams).promise()
+    }
  
     return 1
 }
@@ -212,10 +211,10 @@ const delaliens = async() => {
             TableName: TABLE_NAME,
             Key: {
                 Type: "Alien",
-                id: id1.Items[i].id + ''
+                id: id1.Items[i].id+''
             }
         };
-        await dynamoClient.delete(delparams).promise()
+         dynamoClient.delete(delparams).promise()
     }
     
     return 1
@@ -237,9 +236,3 @@ module.exports = {
 
 
 }
-//might be useful:
-//for (let [key, value] of Object.entries(p)) {
- //   console.log(`${key}: ${value}`);
-//  }
-
-
