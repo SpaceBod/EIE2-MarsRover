@@ -15,7 +15,9 @@
 uint8_t val[4];
 String bin_out;
 
-String right_x, left_x, colour_bin, colour;
+String str_right_x = "200";
+String str_left_x = "120";
+String colour_bin, colour;
 
 String object_coord;
 
@@ -24,8 +26,8 @@ float screen_centre = 320;
 int current_rover_x = 0;
 int current_rover_y = 0;
 
-float left_x = 120;
-float right_x = 200;
+float left_x = 0;
+float right_x = 0;
 
 
 const char* hex_char_to_bin(char c){
@@ -112,9 +114,11 @@ int bin_str_to_dec_num(const String& binaryString){
 
 float size_to_sf(float left_x, float right_x){
   float sf = 0;
-  size = right_x - left_x;
+  float size = right_x - left_x;
 
   sf = 80/size;
+   Serial.println("sf " + String(sf)) ;
+    Serial.println("sf_Size " + String(size)) ;
 
   return sf;
 
@@ -124,15 +128,17 @@ float find_angle(float left_x, float right_x){
     float angle = 0;                                                                                                                             
     float size = 0;    
     float box_centre = 0; 
-    float size = 0;     
+   
     int sf = size_to_sf(left_x, right_x);
 
     box_centre = (left_x + right_x)/2;
-    dist = box_centre - screen_centre;
+    float dist = screen_centre - box_centre;
    
     size = right_x - left_x;                                 
     
     angle = sf * ((0.0738 * dist) - 23.2);
+       Serial.println("find_angle angle " + String(angle)) ;
+
   
     return angle; // angle will be negative for left angle 
 };
@@ -140,11 +146,16 @@ float find_angle(float left_x, float right_x){
 float find_horizontal_distance(float left_x, float right_x){
     float dist = 0;
     float box_centre = 0;
+    float sf = size_to_sf(left_x,right_x);
+    float pixel_to_cm = 0.1390625;
  
     box_centre = (left_x + right_x)/2;
-    dist = box_centre - screen_centre;  //left is negative 
+    dist = (box_centre - screen_centre); //left is negative. note the conversiob from pixel to cm - 1 pixel is 89/640cm
+    float actualdist = dist * sf * pixel_to_cm;
+    
+    Serial.println("horiz " + String(actualdist));
 
-    return dist;
+    return actualdist;
 
 }; 
 
@@ -152,15 +163,19 @@ float find_vertical_distance(float left_x, float right_x){
   float x_dist = find_horizontal_distance(left_x, right_x);
   float y_dist = 0;
   float angle = find_angle(left_x, right_x); 
+  float anglerads = (angle/180) * M_PI; 
+  Serial.println("rads " + String(anglerads));
 
-  y_dist = x_dist * tan(angle) * 57.2958; // converts from radians to degrees
+  y_dist = x_dist / tan(anglerads); // converts from radians to degrees
+  Serial.println("vert " + String(y_dist)) ;
+
 
   return y_dist;
 
 }
                                                                                      
 String find_coord(float left_x, float right_x, int current_rover_x, int current_rover_y){
-    String coord= ""; 
+    //String coord= ""; 
     float object_x;
     float object_y;
     
@@ -170,7 +185,7 @@ String find_coord(float left_x, float right_x, int current_rover_x, int current_
     object_x = current_rover_x + x_dist;
     object_y = current_rover_y  + y_dist;
 
-    coord = String(object_x) + "," + String(object_y);
+    String coord = String(object_x, 2) +"," + String(object_y, 2);
 
     return coord;
 
@@ -179,7 +194,7 @@ String find_coord(float left_x, float right_x, int current_rover_x, int current_
 void setup(){
 
   Serial.begin(115200);
-  Serial2.begin(115200, SERIAL_8N1, RXD_PIN, TXD_PIN);
+  //Serial2.begin(115200, SERIAL_8N1, RXD_PIN, TXD_PIN);
 
 }
 
@@ -209,10 +224,10 @@ void loop(){
         Serial.print("right_x: "); Serial.println(right_x);
         delay(1000);
 */
-        object_coord = find_coord(left_x.toFloat(), right_x.toFloat(), current_rover_x, current_rover_y);
+        object_coord = find_coord(str_left_x.toFloat(), str_right_x.toFloat(), current_rover_x, current_rover_y);
 
-        Serial.print("object_coord");
-        Serial.println(object_coord);
+        //Serial.print("object_coord: ");
+        //Serial.println(object_coord);
     
    //}
 
