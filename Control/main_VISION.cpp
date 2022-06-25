@@ -135,7 +135,7 @@ int find_angle(int left_x, int right_x, int dist){                              
 
     return angle; // angle will be negative for left angle 
 
-};
+}; //change this to give a model for the angle on screen to angle of rover so we can avoid pythag
 
 String find_coord(int left_x, int right_x, int current_rover_x, int current_rover_y){
     String coord= ""; 

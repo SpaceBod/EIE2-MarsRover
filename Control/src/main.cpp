@@ -1,324 +1,220 @@
-// TO DO 2: read correct values to database for mapping
+#include <Arduino.h>
+#include "headers/uart.h"
 
-#include "headers/control.h"
+#include <Wire.h>
 
-//_________________________________________________________________________DRIVE HEADERS________________________________________________________________________
+#include <stdint.h>
+#include <string.h>
+#include <stdio.h>
 
-#include "headers/motor_control.h"
-#include "headers/ADNS3080.h"
+#include <stdlib.h>
 
-// __________________________________________________________VARIABLE DELCARATION FOR CONTROL MODULE____________________________________________________________
+#define TXD_PIN 17
+#define RXD_PIN 16
 
-const char* ssid = "LaptopWiFi";
-const char* password = "summerProject1234";
+uint8_t val[4];
+String bin_out;
 
-#define UDP_PORT 3003
-WiFiUDP UDP;
+String right_x, left_x, colour_bin, colour;
 
-char packet[255];
-char reply[] = "Packet received!";
+String object_coord;
 
-String prevPacket = "";
-String curPacket = "";
+float screen_centre = 320;
 
-int intArray[3];
+int current_rover_x = 0;
+int current_rover_y = 0;
 
-const char* serverName = "http://146.169.202.58/post_rover_data.php"; //wireless lan adapter wifi IPV4 address
+float left_x = 120;
+float right_x = 200;
+
+
+const char* hex_char_to_bin(char c){
+    // TODO handle default / error
+    switch(toupper(c))
+    {
+        case '0': return "0000";
+        case '1': return "0001";
+        case '2': return "0010";
+        case '3': return "0011";
+        case '4': return "0100";
+        case '5': return "0101";
+        case '6': return "0110";
+        case '7': return "0111";
+        case '8': return "1000";
+        case '9': return "1001";
+        case 'A': return "1010";
+        case 'B': return "1011";
+        case 'C': return "1100";
+        case 'D': return "1101";
+        case 'E': return "1110";
+        case 'F': return "1111";
+    }
+}
+
+const String  bin_to_colour (String c){
+   
+    String colour;
+
+    if (c == "001" ){
+        colour = "red";
+    }
+    else if(c == "010"){
+        colour = "green";
+    }
+    else if (c == "011"){
+        colour = "blue";
+    }
+    else if (c == "100"){
+        colour = "orange";
+    }
+    else if (c == "101"){
+        colour = "teal";
+    }
+    else if (c == "110"){
+        colour = "fuchsia";
+    }
+    else if (c == "111"){
+        colour = "fuchsia";
+    }
+    else {
+        colour = "NULL";
+    }
+    
+    return colour;
+}
+
+String hex_str_to_bin_str(const String& hex){
+    // TODO use a loop from <algorithm> or smth
+
+    String bin;
+
+    for(unsigned i = 0; i != hex.length(); ++i){
+       bin += hex_char_to_bin(hex[i]);
+    }
+
+    return bin;
+}
+
+int bin_str_to_dec_num(const String& binaryString){
+
+  int value = 0; 
+	int indexCounter = 0; 
+	for(int i = binaryString.length()-1; i >= 0; i--) { 
  
-String apiKey = "tPmAT5Ab3j7F9";
+      if(binaryString [i] == '1') { 
+        value += pow(2, indexCounter); 
+    	} 
 
-String rover_coord, fan_coord, alien_coord, alien_colour, building_coord;
-int rover_angle;
+        indexCounter++; 
+	} 
+	return value;
+}
 
-// __________________________________________________________VARIABLE DECLARATION FOR DRIVE MODULE_____________________________________________________________
+float size_to_sf(float left_x, float right_x){
+  float sf = 0;
+  size = right_x - left_x;
 
-int distance, degrees, power, power1, power2;
-int direction, direction1, direction2;
+  sf = 80/size;
 
-int current_rover_x = 22;
-int current_rover_y = 44;
+  return sf;
 
-unsigned long lastTime = 0;
+}
 
-// __________________________________________________________VARIABLE DECLARATION FOR RADAR MODULE_____________________________________________________________
+float find_angle(float left_x, float right_x){                                   
+    float angle = 0;                                                                                                                             
+    float size = 0;    
+    float box_centre = 0; 
+    float size = 0;     
+    int sf = size_to_sf(left_x, right_x);
 
-#define RADAR_VOLTAGE 35 // pin A5
-int radar_voltage = 0;
-
-int radar_x = 0 ;
-int radar_y = 0;
-
-String radar_present = "";
-
-//______________________________________________________________________________________________________________________________________________________________
-
-void setup() {
-// ___________________________________________________________________CONTROL MODULE____________________________________________________________________________
+    box_centre = (left_x + right_x)/2;
+    dist = box_centre - screen_centre;
+   
+    size = right_x - left_x;                                 
+    
+    angle = sf * ((0.0738 * dist) - 23.2);
   
+    return angle; // angle will be negative for left angle 
+};
+
+float find_horizontal_distance(float left_x, float right_x){
+    float dist = 0;
+    float box_centre = 0;
+ 
+    box_centre = (left_x + right_x)/2;
+    dist = box_centre - screen_centre;  //left is negative 
+
+    return dist;
+
+}; 
+
+float find_vertical_distance(float left_x, float right_x){
+  float x_dist = find_horizontal_distance(left_x, right_x);
+  float y_dist = 0;
+  float angle = find_angle(left_x, right_x); 
+
+  y_dist = x_dist * tan(angle) * 57.2958; // converts from radians to degrees
+
+  return y_dist;
+
+}
+                                                                                     
+String find_coord(float left_x, float right_x, int current_rover_x, int current_rover_y){
+    String coord= ""; 
+    float object_x;
+    float object_y;
+    
+    float y_dist = find_vertical_distance(left_x, right_x);
+    float x_dist = find_horizontal_distance(left_x, right_x);
+    
+    object_x = current_rover_x + x_dist;
+    object_y = current_rover_y  + y_dist;
+
+    coord = String(object_x) + "," + String(object_y);
+
+    return coord;
+
+};
+
+void setup(){
+
   Serial.begin(115200);
-  initWiFi(ssid, password);
-
-  UDP.begin(UDP_PORT);
-  Serial.print("Listening on UDP port ");
-  Serial.println(UDP_PORT);
-
-// ___________________________________________________________________DRIVE MODULE______________________________________________________________________________
-  
-  //__________________________________________________________________MOTOR_CONTROL_____________________________________________________________________________
-    
-  int a = 0;
-  robot.begin();
-
- //____________________________________________________________________OPTICAL_FLOW______________________________________________________________________________
-
-  //L298N DC Motor by Robojax.com
-  pinMode(PIN_SS,OUTPUT);
-  pinMode(PIN_MISO,INPUT);
-  pinMode(PIN_MOSI,OUTPUT);
-  pinMode(PIN_SCK,OUTPUT);
-
-  SPI.begin();
-
-  SPI.setClockDivider(SPI_CLOCK_DIV32);
-  SPI.setDataMode(SPI_MODE3);
-  SPI.setBitOrder(MSBFIRST);
+  Serial2.begin(115200, SERIAL_8N1, RXD_PIN, TXD_PIN);
 
 }
 
-//______________________________________________________________________________________________________________________________________________________________
-   
-void loop() {
+void loop(){
+  //add in if statemnt - if boudning box deafault or too small - ignore
 
-//___________________________________________________________________UDP AND MANUAL CONTROL_____________________________________________________________________
-
-  int packetSize = UDP.parsePacket();
-  
-  if (packetSize) {
-    
-    int len = UDP.read(packet, 255);
-    
-    if (len > 0) {
-      
-      packet[len] = '\0';
-
-    }
-    curPacket = String(packet);
-    
-    // prints new movement if different from previous
-    if(curPacket != prevPacket) {
-     
-      prevPacket = curPacket;
-      int ipos = 0;
-      char *tok = strtok(packet, " ");
-
-      while (tok) {
-      
-        if (ipos < 3) {
-          intArray[ipos++] = atoi(tok);
-        }
-
-        tok = strtok(NULL, " ");
-      }
-
-      Serial.print("\nDist: ");
-      Serial.print(intArray[0]);
-      Serial.print(" Ang: ");
-      Serial.print(intArray[1]);
-      Serial.print(" Pow: ");
-      Serial.println(intArray[2]);
-      
-      distance = intArray[0];
-      degrees =  intArray[1];
-      power = intArray[2];
-
-    }
-
-    else {
-      // prints out movement being held
-      Serial.print("->");
-    }
-
-    // movement functions
-    // turn off motor
-    if (curPacket == "0 0 0"){
-      robot.brake(1);
-      robot.brake(2);
-    }
-    
-    // movements!
-    else {
-
-      // forwards and backwards (no angles)
-      if (degrees == 0) {
-        if (distance > 0) {
-          direction = 1;
-        }
-        else {
-          direction = 2;
-        }
-        robot.rotate(right_motor, power, direction);
-        robot.rotate(left_motor, power, direction);
-      }
-
-      // rotation (no f/b)
-      if (degrees != 0 && distance == 0) {
-        if (degrees > 0) {
-          direction1 = 2;
-          direction2 = 1;
-          power1 = power * 0.5;
-        }
-        else {
-          direction1 = 1;
-          direction2 = 2;
-          power2 = power * 0.5;
-        }
-        robot.rotate(right_motor, power1, direction1);
-        robot.rotate(left_motor, power2, direction2);
-      }
-
-      // rotation and f/b
-      if (degrees != 0 && distance != 0) {
-        if (degrees > 0 && distance > 0) {
-          direction1 = 1;
-          direction2 = 1;
-          power1 = power * 0.5;
-          power2 = power;
-        }
-
-        if (degrees < 0 && distance > 0) {
-          direction1 = 1;
-          direction2 = 1;
-          power1 = power;
-          power2 = power * 0.5;
-        }
-
-        if (degrees > 0 && distance < 0) {
-          direction1 = 2;
-          direction2 = 2;
-          power1 = power * 0.5;
-          power2 = power;
-        }
-
-        if (degrees < 0 && distance < 0) {
-          direction1 = 2;
-          direction2 = 2;
-          power1 = power;
-          power2 = power * 0.5;
-        }
-
-        robot.rotate(right_motor, power1, direction1);
-        robot.rotate(left_motor, power2, direction2);
-      }
+ /* if (Serial2.available()> 0 ){
         
-      
-    }  
-  }
-
-//___________________________________________________________________RADAR MODULE_____________________________________________________________________
-  
-  radar_voltage = analogRead(RADAR_VOLTAGE);
-  Serial.println(radar_voltage);
-
-  //TO DO: check if the radar values are being taken in continously whilst connected and tehrefore if the serial print is being ouputted with delay or if the values are being read with a delay
-
-  if (radar_voltage >= 3200){ //2.25V for 2840
-    radar_present = "Yes";
-    radar_x = current_rover_x;
-    radar_y = current_rover_y;
-    fan_coord = String(radar_x) + "," + String(radar_y);
-  }
-
-  else{
-    radar_present = "No";
-   // fan_coord = "NULL";
-  }
-
-  Serial.println ("radar? ");
-  Serial.println(radar_present);
-
-//___________________________________________________________________CONTROL MODULE_____________________________________________________________________
-     
-  unsigned long previousMillis = 0;
-  unsigned long interval = 1000;
-  unsigned long currentMillis = millis();
-   
-  //_______________________________________________________________RECONNECTING WIFI____________________________________________________________________
-  
-  if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >=interval)) {
-     Serial.println(millis());
-     Serial.println("Reconnecting to WiFi...");
-    
-     WiFi.begin(ssid, password);
-
-     while (WiFi.status() != WL_CONNECTED) {
-       Serial.print('.');
-       delay(1000);
-     }
-
-     Serial.println(WiFi.localIP());
-     
-     previousMillis = currentMillis;
-  }
-
-// ________________________________________________________________POSTING DATA_________________________________________________________________________
-
-//Send an HTTP POST request every 1 sec
-
-  if ((millis() - lastTime) > 5000UL) { 
-    
-    lastTime = millis();
-
-    //Check WiFi connection status
-    if(WiFi.status()== WL_CONNECTED){
-      WiFiClient client;
-      HTTPClient http;
-      
-      // Your Domain name with URL path or IP address with path
-      http.begin(client, serverName);
+        Serial2.readBytes(val, 4);
+        char hex_out[100];
+        sprintf(hex_out, "%02x%02x%02x%02x", val[3], val[2], val[1], val[0]);
         
-      // Specify content-type header
-      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-          
-    //________________________________________________________________ASSIGNING RANDOM DATA______________________________________________________________
-      
-      rover_coord = String(generate_x()) + "," + String(generate_y());
-      rover_angle = generate_angle();
+        Serial.print(hex_out);
+        Serial.print(" ");
+        bin_out = hex_str_to_bin_str(hex_out);
+        Serial.println(bin_out);
 
-      alien_colour = generate_colour();
-      alien_coord =  String(generate_x()) + "," + String(generate_y());
+        colour_bin = bin_out.substring(2,5);
+        left_x = bin_str_to_dec_num(bin_out.substring(5,16));
+        right_x = bin_str_to_dec_num(bin_out.substring(21,32));
 
-      building_coord = String(generate_x()) + "," + String(generate_y());
-  
-      Serial.print('\n');
-      Serial.println("POST DATA");
-        
-      // Data to send with HTTP POST
-      String httpRequestData = "api_key=" + apiKey + "&rover_coord=" + rover_coord + "&rover_angle=" + rover_angle + "&fan_coord=" + fan_coord + "&alien_coord=" + alien_coord + "&alien_colour=" + alien_colour + "&building_coord" + building_coord +"";
-     
-      Serial.print("httpRequestData: ");
-      Serial.println(httpRequestData);
-          
-      // Send HTTP POST request
-      int httpResponseCode = http.POST(httpRequestData);
-          
-      if (httpResponseCode>0) {
-        Serial.print("HTTP Response code: ");
-        Serial.println(httpResponseCode);
-      }
+        colour = bin_to_colour(colour_bin);
 
-      else {
-        Serial.print("Error code: ");
-        Serial.println(httpResponseCode);
-      }
-          
-      // Free resources
-    http.end();
+        Serial.print("colour_bin: "); Serial.println(colour_bin);
+        Serial.print("colour: "); Serial.println(colour);
+        Serial.print("left_x: "); Serial.println(left_x);
+        Serial.print("right_x: "); Serial.println(right_x);
+        delay(1000);
+*/
+        object_coord = find_coord(left_x.toFloat(), right_x.toFloat(), current_rover_x, current_rover_y);
 
-    }
+        Serial.print("object_coord");
+        Serial.println(object_coord);
+    
+   //}
 
-  }
 
-  
 }
-
- 
