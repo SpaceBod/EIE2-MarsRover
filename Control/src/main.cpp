@@ -1,11 +1,12 @@
 // TO DO 2: read correct values to database for mapping
 
-#include "headers/control.h"
+#include "control.h"
 
 //_________________________________________________________________________DRIVE HEADERS________________________________________________________________________
 
-#include "headers/motor_control.h"
-#include "headers/ADNS3080.h"
+#include "motor_control.h"
+#include "ADNS3080.h"
+#include "drive.h"
 
 // __________________________________________________________VARIABLE DELCARATION FOR CONTROL MODULE____________________________________________________________
 
@@ -35,10 +36,83 @@ int rover_angle;
 int distance, degrees, power, power1, power2;
 int direction, direction1, direction2;
 
-int current_rover_x = 22;
-int current_rover_y = 44;
+bool remote = false;
 
 unsigned long lastTime = 0;
+
+unsigned long timerGyro = 0;
+unsigned long timer = 0;
+
+MPU6050 mpu(Wire);
+float angle;
+bool rotateComplete;    
+
+float total_x = 0;
+float total_y = 0;
+float target_y = 0;
+float total = 0;
+int total_dy = 0;
+int average_dy = 0;
+float gyro_angle = 0;
+float initial_angle = 0;
+float relative_angle = 0;
+float rotationSpeed = 0;
+bool in_range = true;
+float angleSign = 0;
+bool toggleAngle =false;
+
+MD md;
+
+bool recenter = false;
+
+int distanceToGo  = 150;
+int Tp = 15; //Target power - percentage of max power of motor (power is also known as 'duty cycle' ) 
+float Kp = 3; //the Constant 'K' for the 'p' proportional controller
+float integral = 0; //initialize
+float Ki = 0.025; //the Constant 'K' for the 'i' integral term
+float derivative = 0; //initialize
+float error = 0;
+float lastError = 0; //initialize
+int Kd = 3; //the Constant 'K' for the 'd' derivative term
+int correction = 0;
+int powerLeft = 0;
+int powerRight = 0;
+
+float total_x1 = 0;
+float total_y1 = 0;
+float total_y_1 = 0;
+
+float prev_distance = 999;
+float min_distance = 999;
+float min_angle;
+
+int x=0;
+int y=0;
+
+float distance_x=0;
+float distance_y=0;
+
+volatile byte movementflag=0;
+volatile int xydat[2];
+
+float currangle = 0;
+float currx = 0;
+float curry = 0;
+MD mdmancoord;
+float totalangle = 0;
+
+int tdistance = 0;
+
+//ultrasonic stuff:
+#define echoPin 13 // Echo Pin Forward Sensor
+#define trigPin 12 // Trigger Pin Forward Sensor
+#define leftHigh 15 // Left Sensor IO
+#define rightHigh 2 // Right  Right Sensor IO
+bool leftUSTriggered = false;
+bool rightUSTriggered = false;
+double duration, distance; // Duration used to calculate distance
+bool frontsensor = false;
+
 
 // __________________________________________________________VARIABLE DECLARATION FOR RADAR MODULE_____________________________________________________________
 
@@ -52,6 +126,8 @@ String radar_present = "";
 
 //______________________________________________________________________________________________________________________________________________________________
 
+TaskHandle_t sensorupdate;
+
 void setup() {
 // ___________________________________________________________________CONTROL MODULE____________________________________________________________________________
   
@@ -63,14 +139,21 @@ void setup() {
   Serial.println(UDP_PORT);
 
 // ___________________________________________________________________DRIVE MODULE______________________________________________________________________________
+ 
+  Wire.begin();
   
-  //__________________________________________________________________MOTOR_CONTROL_____________________________________________________________________________
-    
-  int a = 0;
+  byte status = mpu.begin();
+  Serial.print(F("MPU6050 status: "));
+  Serial.println(status);
+  while(status!=0){ } // stop everything if could not connect to MPU6050
+  
+  Serial.println(F("Calculating offsets, do not move MPU6050"));
+  delay(2000);
+  mpu.calcOffsets(true, false); // gyro and accelero
+  Serial.println("Done!\n");
+  mpu.setFilterGyroCoef(1);
+
   robot.begin();
-
- //____________________________________________________________________OPTICAL_FLOW______________________________________________________________________________
-
   //L298N DC Motor by Robojax.com
   pinMode(PIN_SS,OUTPUT);
   pinMode(PIN_MISO,INPUT);
@@ -78,141 +161,39 @@ void setup() {
   pinMode(PIN_SCK,OUTPUT);
 
   SPI.begin();
-
   SPI.setClockDivider(SPI_CLOCK_DIV32);
   SPI.setDataMode(SPI_MODE3);
   SPI.setBitOrder(MSBFIRST);
 
+  if(mousecam_init()==-1)
+  {
+    Serial.println("Mouse cam failed to init");
+    while(1);
+  }
+
+  //ultrasonic:
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(leftHigh, INPUT);
+  pinMode(rightHigh, INPUT);
+
+  xTaskCreatePinnedToCore(Sensors,"sensorupdate",10000,NULL,1,&sensorupdate,0); //set sensors on core 0 only
 }
 
 //______________________________________________________________________________________________________________________________________________________________
-   
+
+byte frame[ADNS3080_PIXELS_X * ADNS3080_PIXELS_Y];
+
 void loop() {
 
-//___________________________________________________________________UDP AND MANUAL CONTROL_____________________________________________________________________
+//___________________________________________________________________DRIVE MODULE_____________________________________________________________________
+while (remote = false){
+  auto_drive();
+}
 
-  int packetSize = UDP.parsePacket();
-  
-  if (packetSize) {
-    
-    int len = UDP.read(packet, 255);
-    
-    if (len > 0) {
-      
-      packet[len] = '\0';
-
-    }
-    curPacket = String(packet);
-    
-    // prints new movement if different from previous
-    if(curPacket != prevPacket) {
-     
-      prevPacket = curPacket;
-      int ipos = 0;
-      char *tok = strtok(packet, " ");
-
-      while (tok) {
-      
-        if (ipos < 3) {
-          intArray[ipos++] = atoi(tok);
-        }
-
-        tok = strtok(NULL, " ");
-      }
-
-      Serial.print("\nDist: ");
-      Serial.print(intArray[0]);
-      Serial.print(" Ang: ");
-      Serial.print(intArray[1]);
-      Serial.print(" Pow: ");
-      Serial.println(intArray[2]);
-      
-      distance = intArray[0];
-      degrees =  intArray[1];
-      power = intArray[2];
-
-    }
-
-    else {
-      // prints out movement being held
-      Serial.print("->");
-    }
-
-    // movement functions
-    // turn off motor
-    if (curPacket == "0 0 0"){
-      robot.brake(1);
-      robot.brake(2);
-    }
-    
-    // movements!
-    else {
-
-      // forwards and backwards (no angles)
-      if (degrees == 0) {
-        if (distance > 0) {
-          direction = 1;
-        }
-        else {
-          direction = 2;
-        }
-        robot.rotate(right_motor, power, direction);
-        robot.rotate(left_motor, power, direction);
-      }
-
-      // rotation (no f/b)
-      if (degrees != 0 && distance == 0) {
-        if (degrees > 0) {
-          direction1 = 2;
-          direction2 = 1;
-          power1 = power * 0.5;
-        }
-        else {
-          direction1 = 1;
-          direction2 = 2;
-          power2 = power * 0.5;
-        }
-        robot.rotate(right_motor, power1, direction1);
-        robot.rotate(left_motor, power2, direction2);
-      }
-
-      // rotation and f/b
-      if (degrees != 0 && distance != 0) {
-        if (degrees > 0 && distance > 0) {
-          direction1 = 1;
-          direction2 = 1;
-          power1 = power * 0.5;
-          power2 = power;
-        }
-
-        if (degrees < 0 && distance > 0) {
-          direction1 = 1;
-          direction2 = 1;
-          power1 = power;
-          power2 = power * 0.5;
-        }
-
-        if (degrees > 0 && distance < 0) {
-          direction1 = 2;
-          direction2 = 2;
-          power1 = power * 0.5;
-          power2 = power;
-        }
-
-        if (degrees < 0 && distance < 0) {
-          direction1 = 2;
-          direction2 = 2;
-          power1 = power;
-          power2 = power * 0.5;
-        }
-
-        robot.rotate(right_motor, power1, direction1);
-        robot.rotate(left_motor, power2, direction2);
-      }
-        
-      
-    }  
-  }
+while (remote = true){
+  manual_drive();
+}
 
 //___________________________________________________________________RADAR MODULE_____________________________________________________________________
   
@@ -223,8 +204,8 @@ void loop() {
 
   if (radar_voltage >= 2840){ //2.25V for 2840
     radar_present = "Yes";
-    radar_x = current_rover_x;
-    radar_y = current_rover_y;
+    radar_x = currx;
+    radar_y = curry;
     fan_coord = String(radar_x) + "," + String(radar_y);
   }
 
@@ -281,8 +262,8 @@ void loop() {
           
     //________________________________________________________________ASSIGNING RANDOM DATA______________________________________________________________
       
-      rover_coord = String(generate_x()) + "," + String(generate_y());
-      rover_angle = generate_angle();
+      rover_coord = String(currx) + "," + String(curry);
+      rover_angle = currangle;
 
       alien_colour = generate_colour();
       alien_coord =  String(generate_x()) + "," + String(generate_y());
