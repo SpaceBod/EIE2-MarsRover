@@ -15,7 +15,7 @@ const char* serverName = "http://146.169.196.222/post_rover_data.php"; //wireles
 String apiKey = "tPmAT5Ab3j7F9";
 
 String rover_coord, fan_coord, alien_coord, alien_colour, building_coord;
-int rover_angle,battery_life;
+int rover_angle, battery_life;
 
 // __________________________________________________________VARIABLE DECLARATION FOR DRIVE MODULE_____________________________________________________________
 
@@ -123,7 +123,7 @@ String radar_present = "";
 
 //______________________________________________________________________________________________________________________________________________________________
 
-void coords(){ //currx and curry are global - access directly when sending to sql, only called in driveStraight
+void coords(){ //currx and curry are global - access directly when sending to sql
 
     currangle = totalangle;
     //mdmancoord declared at top with other coord vars;
@@ -138,7 +138,7 @@ void coords(){ //currx and curry are global - access directly when sending to sq
       currangle = currangle + 360;
     }
 
-    while(currangle >= 360){
+    while(currangle > 360){
       currangle = currangle - 360;
     }
 
@@ -204,6 +204,7 @@ void checkRadar() {
   Serial.println ("radar? ");
   Serial.println(radar_present);
 }
+
 void reconnectWIFI() {
   unsigned long previousMillis = 0;
   unsigned long interval = 1000;
@@ -228,7 +229,7 @@ void reconnectWIFI() {
   }
 }
 void postData() {
-  if ((millis() - lastTime) > 5000UL) { 
+  if ((millis() - lastTime) > 1000UL) { //every 1 second
     
     lastTime = millis();
 
@@ -378,105 +379,6 @@ void UDP_listen(){
   }
 }  
 
-void checkRadar() {
-  radar_voltage = analogRead(RADAR_VOLTAGE);
-  Serial.println(radar_voltage);
-
-  //TO DO: check if the radar values are being taken in continously whilst connected and tehrefore if the serial print is being ouputted with delay or if the values are being read with a delay
-
-  if (radar_voltage >= 2840){ //2.25V for 2840
-    radar_present = "Yes";
-    radar_x = currx;
-    radar_y = curry;
-    fan_coord = String(radar_x) + "," + String(radar_y);
-  }
-
-  else{
-    radar_present = "No";
-   // fan_coord = "NULL";
-  }
-
-  Serial.println ("radar? ");
-  Serial.println(radar_present);
-}
-void reconnectWIFI() {
-  unsigned long previousMillis = 0;
-  unsigned long interval = 1000;
-  unsigned long currentMillis = millis();
-   
-  //_______________________________________________________________RECONNECTING WIFI____________________________________________________________________
-  
-  if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >=interval)) {
-     Serial.println(millis());
-     Serial.println("Reconnecting to WiFi...");
-    
-     WiFi.begin(ssid, password);
-
-     while (WiFi.status() != WL_CONNECTED) {
-       Serial.print('.');
-       delay(1000);
-     }
-
-     Serial.println(WiFi.localIP());
-     
-     previousMillis = currentMillis;
-  }
-}
-void postData() {
-  if ((millis() - lastTime) > 1000UL) { 
-    
-    lastTime = millis();
-
-    //Check WiFi connection status
-    if(WiFi.status()== WL_CONNECTED){
-      WiFiClient client;
-      HTTPClient http;
-      
-      // Your Domain name with URL path or IP address with path
-      http.begin(client, serverName);
-        
-      // Specify content-type header
-      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-          
-    //________________________________________________________________ASSIGNING RANDOM DATA______________________________________________________________
-      
-      rover_coord = String(currx) + "," + String(curry);
-      rover_angle = currangle;
-
-      alien_colour = generate_colour();
-      alien_coord =  String(generate_x()) + "," + String(generate_y());
-
-      building_coord = String(generate_x()) + "," + String(generate_y());
-  
-      Serial.print('\n');
-      Serial.println("POST DATA");
-        
-      // Data to send with HTTP POST
-      String httpRequestData = "api_key=" + apiKey + "&rover_coord=" + rover_coord + "&rover_angle=" + rover_angle + "&fan_coord=" + fan_coord + "&alien_coord=" + alien_coord + "&alien_colour=" + alien_colour + "&building_coord" + building_coord +"";
-     
-      Serial.print("httpRequestData: ");
-      Serial.println(httpRequestData);
-          
-      // Send HTTP POST request
-      int httpResponseCode = http.POST(httpRequestData);
-          
-      if (httpResponseCode>0) {
-        Serial.print("HTTP Response code: ");
-        Serial.println(httpResponseCode);
-      }
-
-      else {
-        Serial.print("Error code: ");
-        Serial.println(httpResponseCode);
-      }
-          
-      // Free resources
-    http.end();
-
-    }
-  }
-}
-
 void Sensors(void *param){
  
   Serial.println("Sensor updates running on core: " + String(xPortGetCoreID()));
@@ -491,8 +393,6 @@ void Sensors(void *param){
       recenter = false;
     }
     Ultrasonic();
-    reconnectWIFI();
-    postData();
     delay(5);
 
     UDP_listen();
@@ -505,7 +405,7 @@ void Sensors(void *param){
 
 void rotate(float r_angle)
 {   
-  totalangle = totalangle + r_angle;
+  totalangle += r_angle;
 
   recenter = true;
   delay(10);
@@ -748,12 +648,9 @@ void manual_control(){
 }
 
 void auto_drive(){
-  driveStraight(1);
-   delay(1000);
-   rotate(90);
+   driveStraight(10);
+   delay(50);
 }
-
-
 
 TaskHandle_t sensorupdate;
 
@@ -813,26 +710,17 @@ void setup() {
 
 byte frame[ADNS3080_PIXELS_X * ADNS3080_PIXELS_Y];
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 3cf6cb487568833c38d44b7e7b102296a60282cb
-
 void loop() {
 
 //___________________________________________________________________DRIVE MODULE_____________________________________________________________________
-while (remote == false){
-  auto_drive();
-<<<<<<< HEAD
-=======
   
-}
->>>>>>> 3cf6cb487568833c38d44b7e7b102296a60282cb
+  while (remote == false){
+    auto_drive();
+  }
+  while (remote == true){
+    manual_control();
+  }
 
-while (remote == true){
-  manual_control();
-}
-}
 }
 
 

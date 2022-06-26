@@ -15,8 +15,6 @@
 uint8_t val[4];
 String bin_out;
 
-String str_right_x = "200";
-String str_left_x = "120";
 String colour_bin, colour;
 
 String object_coord;
@@ -26,8 +24,8 @@ float screen_centre = 320;
 int current_rover_x = 0;
 int current_rover_y = 0;
 
-float left_x = 0;
-float right_x = 0;
+float left_x = 120;
+float right_x = 200;
 
 
 const char* hex_char_to_bin(char c){
@@ -224,7 +222,7 @@ void loop(){
         Serial.print("right_x: "); Serial.println(right_x);
         delay(1000);
 */
-        object_coord = find_coord(str_left_x.toFloat(), str_right_x.toFloat(), current_rover_x, current_rover_y);
+        object_coord = find_coord(left_x, right_x, current_rover_x, current_rover_y);
 
         //Serial.print("object_coord: ");
         //Serial.println(object_coord);
