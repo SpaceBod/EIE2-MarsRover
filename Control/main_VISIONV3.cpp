@@ -192,7 +192,7 @@ String find_coord(float left_x, float right_x, int current_rover_x, int current_
 
 float find_building_size(float left_x, float right_x){
    float building_size_pixels = right_x - left_x;
-   float buidling_size_cm = buidling_size_pixels * pixel_to_cm; 
+   float buidling_size_cm = buidling_size_pixels * pixel_to_cm; * sf 
    return building_size_cm;
 }
 
