@@ -15,18 +15,19 @@
 uint8_t val[4];
 String bin_out;
 
-String colour_bin, colour;
-
-String object_coord;
+String colour_bin, colour, object_coord;
 
 float screen_centre = 320;
 
 int current_rover_x = 0;
 int current_rover_y = 0;
 
+float building_size = 0; 
+
 float left_x = 120;
 float right_x = 200;
 
+float pixel_to_cm = 0.1390625;
 
 const char* hex_char_to_bin(char c){
     // TODO handle default / error
@@ -70,11 +71,14 @@ const String  bin_to_colour (String c){
     else if (c == "101"){
         colour = "teal";
     }
+    else if (c == "101"){
+        colour = "fuchsia";
+    }
     else if (c == "110"){
         colour = "fuchsia";
     }
     else if (c == "111"){
-        colour = "fuchsia";
+        colour = "building";
     }
     else {
         colour = "NULL";
@@ -84,8 +88,7 @@ const String  bin_to_colour (String c){
 }
 
 String hex_str_to_bin_str(const String& hex){
-    // TODO use a loop from <algorithm> or smth
-
+   
     String bin;
 
     for(unsigned i = 0; i != hex.length(); ++i){
@@ -115,8 +118,8 @@ float size_to_sf(float left_x, float right_x){
   float size = right_x - left_x;
 
   sf = 80/size;
-   Serial.println("sf " + String(sf)) ;
-    Serial.println("sf_Size " + String(size)) ;
+  Serial.println("sf " + String(sf)) ;
+  Serial.println("sf_Size " + String(size)) ;
 
   return sf;
 
@@ -135,7 +138,7 @@ float find_angle(float left_x, float right_x){
     size = right_x - left_x;                                 
     
     angle = sf * ((0.0738 * dist) - 23.2);
-       Serial.println("find_angle angle " + String(angle)) ;
+    Serial.println("find_angle angle " + String(angle)) ;
 
   
     return angle; // angle will be negative for left angle 
@@ -145,8 +148,7 @@ float find_horizontal_distance(float left_x, float right_x){
     float dist = 0;
     float box_centre = 0;
     float sf = size_to_sf(left_x,right_x);
-    float pixel_to_cm = 0.1390625;
- 
+     
     box_centre = (left_x + right_x)/2;
     dist = (box_centre - screen_centre); //left is negative. note the conversiob from pixel to cm - 1 pixel is 89/640cm
     float actualdist = dist * sf * pixel_to_cm;
@@ -166,7 +168,6 @@ float find_vertical_distance(float left_x, float right_x){
 
   y_dist = x_dist / tan(anglerads); // converts from radians to degrees
   Serial.println("vert " + String(y_dist)) ;
-
 
   return y_dist;
 
@@ -189,17 +190,23 @@ String find_coord(float left_x, float right_x, int current_rover_x, int current_
 
 };
 
+float find_building_size(float left_x, float right_x){
+   float building_size_pixels = right_x - left_x;
+   float buidling_size_cm = buidling_size_pixels * pixel_to_cm; 
+   return building_size_cm;
+}
+
 void setup(){
 
   Serial.begin(115200);
-  //Serial2.begin(115200, SERIAL_8N1, RXD_PIN, TXD_PIN);
+  Serial2.begin(115200, SERIAL_8N1, RXD_PIN, TXD_PIN);
 
 }
 
 void loop(){
-  //add in if statemnt - if boudning box deafault or too small - ignore
+  //TO DO: add in if statemnt - if (bouding box at default or too small) then (ignore data)
 
- /* if (Serial2.available()> 0 ){
+  if (Serial2.available()> 0 ){
         
         Serial2.readBytes(val, 4);
         char hex_out[100];
@@ -208,7 +215,7 @@ void loop(){
         Serial.print(hex_out);
         Serial.print(" ");
         bin_out = hex_str_to_bin_str(hex_out);
-        Serial.println(bin_out);
+        //Serial.println(bin_out);
 
         colour_bin = bin_out.substring(2,5);
         left_x = bin_str_to_dec_num(bin_out.substring(5,16));
@@ -216,18 +223,23 @@ void loop(){
 
         colour = bin_to_colour(colour_bin);
 
+        if (colour == "building"){
+            building_size = find_building_size(left_x, right_x);
+        }
+
+        else {
+            building_size = 0;            
+        }
+
+        object_coord = find_coord(left_x, right_x, current_rover_x, current_rover_y);
+
         Serial.print("colour_bin: "); Serial.println(colour_bin);
         Serial.print("colour: "); Serial.println(colour);
         Serial.print("left_x: "); Serial.println(left_x);
         Serial.print("right_x: "); Serial.println(right_x);
-        delay(1000);
-*/
-        object_coord = find_coord(left_x, right_x, current_rover_x, current_rover_y);
-
-        //Serial.print("object_coord: ");
-        //Serial.println(object_coord);
+        Serial.print("object_coord: "); Serial.println(object_coord);
+        Serial.print("building_size: "); Serial.println(building_size);
     
-   //}
-
+   }
 
 }
