@@ -9,7 +9,7 @@ $password = "";
 
 $api_key_value = "tPmAT5Ab3j7F9";
 
-$api_key = $rover_coord = $rover_angle = $fan_coord = $alien_coord = $alien_colour = $building_coord = "";
+$api_key = $rover_coord = $rover_angle = $fan_coord = $alien_coord = $alien_colour = $building_coord =  $building_size = $battery_life = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $api_key = test_input($_POST["api_key"]);
@@ -20,6 +20,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $alien_coord = test_input($_POST["alien_coord"]);
         $alien_colour = test_input($_POST["alien_colour"]);
         $building_coord = test_input($_POST["building_coord"]);
+        $building_size = test_input($_POST["building_size"]);
+        $battery_life = test_input($_POST["battery_life"]);
         
         // Create connection
         $conn = new mysqli($servername, $username, $password, $dbname);
@@ -28,8 +30,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             die("Connection failed: " . $conn->connect_error);
         } 
         
-        $sql = "INSERT INTO post_data (rover_coord, rover_angle, fan_coord, alien_coord, alien_colour, building_coord)
-        VALUES ('" . $rover_coord . "', '" . $rover_angle . "', '" . $fan_coord . "', '" . $alien_coord . "', '" . $alien_colour ."', '" . $building_coord . "')";
+        $sql = "INSERT INTO post_data (rover_coord, rover_angle, fan_coord, alien_coord, alien_colour, building_coord, building_size, battery_life)
+        VALUES ('" . $rover_coord . "', '" . $rover_angle . "', '" . $fan_coord . "', '" . $alien_coord . "', '" . $alien_colour ."', '" . $building_coord . "', '" . $building_size . "', '" . $battery_life . "')";
         
         if ($conn->query($sql) === TRUE) {
             echo "New record created successfully";

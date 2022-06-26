@@ -16,6 +16,7 @@ String apiKey = "tPmAT5Ab3j7F9";
 
 String rover_coord, fan_coord, alien_coord, alien_colour, building_coord;
 int rover_angle, battery_life;
+float building_size;
 
 // __________________________________________________________VARIABLE DECLARATION FOR DRIVE MODULE_____________________________________________________________
 
@@ -228,6 +229,7 @@ void reconnectWIFI() {
      previousMillis = currentMillis;
   }
 }
+
 void postData() {
   if ((millis() - lastTime) > 1000UL) { //every 1 second
     
@@ -255,12 +257,14 @@ void postData() {
       building_coord = String(generate_x()) + "," + String(generate_y());
 
       battery_life = generate_battery_life();
+
+      building_size = generate_battery_life();
   
       Serial.print('\n');
       Serial.println("POST DATA");
         
       // Data to send with HTTP POST
-      String httpRequestData = "api_key=" + apiKey + "&rover_coord=" + rover_coord + "&rover_angle=" + rover_angle + "&fan_coord=" + fan_coord + "&alien_coord=" + alien_coord + "&alien_colour=" + alien_colour + "&building_coord" + building_coord + "&battery_life" + battery_life +"";
+      String httpRequestData = "api_key=" + apiKey + "&rover_coord=" + rover_coord + "&rover_angle=" + rover_angle + "&fan_coord=" + fan_coord + "&alien_coord=" + alien_coord + "&alien_colour=" + alien_colour + "&building_coord" + building_coord + "&building_size" + building_size + "&battery_life" + battery_life +"";
      
       Serial.print("httpRequestData: ");
       Serial.println(httpRequestData);
