@@ -503,13 +503,17 @@ void find_perpendicular() {
   perpTurn();
 }
 
-void driveStraight(int dist) {
+void driveStraight(int dist, bool avoid) {
   recenter = true;
   delay(10);
   Serial.println("driveStraight running on core: " + String(xPortGetCoreID()));
   dist = dist + total_y;
 
-  while(total_y < dist && frontsensor != true) {
+  if(dist == -255){
+    dist = 999999999999;
+  }
+
+  while(total_y < dist && frontsensor != true) { //still stops during manual - stops you crashing into a wall
     relative_angle = mpu.getAngleZ() - initial_angle;
     if ((millis() - timer >= 100) && Tp < 40) 
     {
@@ -532,7 +536,6 @@ void driveStraight(int dist) {
     total_x = total_x1/44.2;
     total_y = total_y1/44.2;
 
-    //mpu.update(); // dont need the update in here anymore - updates on sensor code core 0
     error = relative_angle; // proportional
     if (error == 0) {
         integral = 0;
@@ -544,16 +547,33 @@ void driveStraight(int dist) {
     correction = (Kp*(error) + Ki*(integral) + Kd*derivative) * -1;
     powerLeft = Tp - correction;
     powerRight = Tp + correction;  
+
+    if(remote == true){ //if remote control on, use power from remote.
+        powerRight = UDPpower;
+        powerLeft = UDPpower; //will need to use relationship found in excel- CHANGE THISSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+        //powerLeft = something * powerRight;
+    }
     
-    if (powerLeft > 45) {
+    else if (powerLeft > 45) {
       powerLeft = 45;
     }
     else if (powerRight > 45) {
       powerRight = 45;
     }
 
-    robot.rotate(right_motor, powerRight, CW);
-    robot.rotate(left_motor, powerLeft, CW);
+    
+
+    if(dist > 0){
+        robot.rotate(right_motor, powerRight, CW);
+        robot.rotate(left_motor, powerLeft, CW);
+    }
+    else{ //if -ve dist from manual control
+        robot.rotate(right_motor, powerRight, CCW);
+        robot.rotate(left_motor, powerLeft, CCW);
+    }
+
+   
+
 
     lastError = error;
     //Serial.println("Dist " + String(total_y) + "; error " + String(error) + "; power_left " + String(powerLeft) + "; powerRight " + String(powerRight));
@@ -563,96 +583,56 @@ void driveStraight(int dist) {
 
     delay(50);
   }
+  
 
   robot.rotate(right_motor, 0, CW);
   robot.rotate(left_motor, 0, CW);
 
-  if (frontsensor == true && leftUSTriggered == false && rightUSTriggered == false) {
-     find_perpendicular();
-  }
-  else if (frontsensor == true && leftUSTriggered == true && rightUSTriggered == false) {
-     rotate(90); 
-  }
-  }
+ if(avoid == true){
+    if (frontsensor == true && leftUSTriggered == false && rightUSTriggered == false) {
+      find_perpendicular();
+    }
+    else if (frontsensor == true && leftUSTriggered == true && rightUSTriggered == false) {
+        rotate(90); 
+    }
+    else if(frontsensor == true && leftUSTriggered == false && rightUSTriggered == true){ //not sure if minus angles work 
+        rotate(-90)
+    }
+
+  }   
+
+}
 
 void manual_control(){
-  Serial.println("Entered manual control");
-    // // movement functions
-    // // turn off motor
-    // if (curPacket == "0 0 0"){
-    //   robot.brake(1);
-    //   robot.brake(2);
-    // }
-    
-    // // movements!
-    // else {
+    Serial.println("ENTERED MANUAL CONTROL")
 
-    //   // forwards and backwards (no angles)
-    //   if (degrees == 0) {
-    //     if (distance > 0) {
-    //       direction = 1;
-    //     }
-    //     else {
-    //       direction = 2;
-    //     }
-    //     robot.rotate(right_motor, power, direction);
-    //     robot.rotate(left_motor, power, direction);
-    //   }
+    if(curPacket == "0 0 0"){
+        robot.brake(1);
+        robot.brake(2);
+    }
+    else{ //movements:
+            //udppower applied in drivestraight function.
+        if(UDPdegrees == 0){//just forward/back
+            driveStraight(UDPdistance, false);//dont use avoidance
+        }
 
-    //   // rotation (no f/b)
-    //   if (degrees != 0 && distance == 0) {
-    //     if (degrees > 0) {
-    //       direction1 = 2;
-    //       direction2 = 1;
-    //       power1 = power * 0.5;
-    //     }
-    //     else {
-    //       direction1 = 1;
-    //       direction2 = 2;
-    //       power2 = power * 0.5;
-    //     }
-    //     robot.rotate(right_motor, power1, direction1);
-    //     robot.rotate(left_motor, power2, direction2);
-    //   }
+        if(UDPdegrees != 0 && UDPdistance == 0){ //if just rotate
+            rotate(static_cast<int>(UDPdegrees)); 
 
-    //   // rotation and f/b
-    //   if (degrees != 0 && distance != 0) {
-    //     if (degrees > 0 && distance > 0) {
-    //       direction1 = 1;
-    //       direction2 = 1;
-    //       power1 = power * 0.5;
-    //       power2 = power;
-    //     }
+        }
 
-    //     if (degrees < 0 && distance > 0) {
-    //       direction1 = 1;
-    //       direction2 = 1;
-    //       power1 = power;
-    //       power2 = power * 0.5;
-    //     }
+        if(UDPdegrees != 0 && UDPdistance !=0){//forward/back and rotate
+            //should work fine with slider, not sure about controller
+            rotate(static_cast<int>(UDPdegrees)); //do rotation 
+            driveStraight(UDPdistance, false);  //then forward the distance
+            //hopefully will allow coord tracking and not move in a stupid way. small increments so maybe works?
+        }
 
-    //     if (degrees > 0 && distance < 0) {
-    //       direction1 = 2;
-    //       direction2 = 2;
-    //       power1 = power * 0.5;
-    //       power2 = power;
-    //     }
-
-    //     if (degrees < 0 && distance < 0) {
-    //       direction1 = 2;
-    //       direction2 = 2;
-    //       power1 = power;
-    //       power2 = power * 0.5;
-    //     }
-
-    //     robot.rotate(right_motor, power1, direction1);
-    //     robot.rotate(left_motor, power2, direction2);
-    //   }
-    // }
+    }
 }
 
 void auto_drive(){
-   driveStraight(10);
+   driveStraight(10, true);
    delay(50);
 }
 
