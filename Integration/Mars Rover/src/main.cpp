@@ -256,9 +256,9 @@ void postData() {
 
       building_coord = String(generate_x()) + "," + String(generate_y());
 
-      battery_life = generate_battery_life();
+      battery_life = 0;//generate_battery_life();
 
-      building_size = generate_battery_life();
+      building_size = 0;//generate_battery_life();
   
       Serial.print('\n');
       Serial.println("POST DATA");
@@ -510,7 +510,7 @@ void driveStraight(int dist, bool avoid) {
   dist = dist + total_y;
 
   if(dist == -255){
-    dist = 999999999999;
+    dist = 999;
   }
 
   while(total_y < dist && frontsensor != true) { //still stops during manual - stops you crashing into a wall
@@ -596,7 +596,7 @@ void driveStraight(int dist, bool avoid) {
         rotate(90); 
     }
     else if(frontsensor == true && leftUSTriggered == false && rightUSTriggered == true){ //not sure if minus angles work 
-        rotate(-90)
+        rotate(-90);
     }
 
   }   
@@ -604,7 +604,7 @@ void driveStraight(int dist, bool avoid) {
 }
 
 void manual_control(){
-    Serial.println("ENTERED MANUAL CONTROL")
+    Serial.println("ENTERED MANUAL CONTROL");
 
     if(curPacket == "0 0 0"){
         robot.brake(1);
