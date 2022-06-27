@@ -29,6 +29,8 @@ float right_x = 0;
 
 float pixel_to_cm = 0.1390625;
 
+float width = 0;
+
 const char* hex_char_to_bin(char c){
     // TODO handle default / error
     switch(toupper(c))
@@ -224,29 +226,46 @@ void loop(){
 
         colour_bin = bin_out.substring(2,5);
         left_x = bin_str_to_dec_num(bin_out.substring(5,16));
-        Serial.print("binary left_x: ");Serial.println(bin_out.substring(5,16));
         right_x = bin_str_to_dec_num(bin_out.substring(21,32));
-        Serial.print("binary right_x: ");Serial.println(bin_out.substring(21,32));
+      
+        width = right_x - left_x;
 
-        colour = bin_to_colour(colour_bin);
+        if ((width < 550) && (width>75)){
 
-        if (colour == "building"){
-            building_size = find_building_size(left_x, right_x);
+            left_x = bin_str_to_dec_num(bin_out.substring(5,16));
+            right_x = bin_str_to_dec_num(bin_out.substring(21,32));
+            colour = bin_to_colour(colour_bin);
+
+            if (colour == "building"){
+                building_size = find_building_size(left_x, right_x);
+            }
+
+            else {
+                building_size = 0;            
+            }
+
+            object_coord = find_coord(left_x, right_x, current_rover_x, current_rover_y);
+
+            Serial.print("colour_bin: "); Serial.println(colour_bin);
+            Serial.print("colour: "); Serial.println(colour);
+            Serial.print("left_x: "); Serial.println(left_x);
+            Serial.print("right_x: "); Serial.println(right_x);
+            Serial.print("object_coord: "); Serial.println(object_coord);
+            Serial.print("building_size: "); Serial.println(building_size);
+            Serial.println(" ");
+
         }
-
         else {
-            building_size = 0;            
-        }
-
-        object_coord = find_coord(left_x, right_x, current_rover_x, current_rover_y);
-
-        Serial.print("colour_bin: "); Serial.println(colour_bin);
-        Serial.print("colour: "); Serial.println(colour);
-        Serial.print("left_x: "); Serial.println(left_x);
-        Serial.print("right_x: "); Serial.println(right_x);
-        Serial.print("object_coord: "); Serial.println(object_coord);
-        Serial.print("building_size: "); Serial.println(building_size);
-        Serial.println(" ");
+            
+            left_x = 0;
+            right_x = 0;
+            colour = bin_to_colour(colour_bin);
+           
+            Serial.println ("ignore values - out of bounding box range");
+            Serial.print("left_x: "); Serial.println(left_x);
+            Serial.print("right_x: "); Serial.println(right_x);
+            Serial.print("colour: "); Serial.println(colour);
+        }     
     
    }
 

@@ -124,19 +124,13 @@ String radar_present = "";
 
 //_______________________________________________________________FUNCTIONS____________________________________________________________________________________
 
-void coords(){ //currx and curry are global - access directly when sending to sql
+void coords(){ //currx and curry are global - access directly when sending to sql 
 
     currangle = totalangle;
     //mdmancoord declared at top with other coord vars;
     //mousecam_read_motion(&mdmancoord);
      
-<<<<<<< HEAD
-    float changex = convTwosComp(md.dx);
-    f loat changey = convTwosComp(md.dy);
-
-=======
     float changey = convTwosComp(md.dy);
->>>>>>> 4ea08a1685cf9a377e2786cd519da8cd998f400f
     changey = changey/44.2;
 
     while(currangle < 0){ //conv to +ve angles only
