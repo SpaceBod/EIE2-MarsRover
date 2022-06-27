@@ -7,8 +7,8 @@
 
 // __________________________________________________________VARIABLE DELCARATION FOR CONTROL MODULE____________________________________________________________
 
-const char* ssid = "LaptopWiFi";
-const char* password = "summerProject1234";
+const char* ssid = "roverspot";
+const char* password = "roverspot";
 
 const char* serverName = "http://146.169.196.222/post_rover_data.php"; //wireless lan adapter wifi IPV4 address
  
@@ -27,9 +27,9 @@ String curPacket = "";
 #define UDP_PORT 3003
 WiFiUDP UDP;
 
-int UDPdistance;
-int UDPdegrees;
-int UDPpower;
+int UDPdistance = 0;
+int UDPdegrees = 0;
+int UDPpower = 0;
 
 int intArray[3];
 
@@ -130,9 +130,13 @@ void coords(){ //currx and curry are global - access directly when sending to sq
     //mdmancoord declared at top with other coord vars;
     //mousecam_read_motion(&mdmancoord);
      
+<<<<<<< HEAD
     float changex = convTwosComp(md.dx);
     f loat changey = convTwosComp(md.dy);
 
+=======
+    float changey = convTwosComp(md.dy);
+>>>>>>> 4ea08a1685cf9a377e2786cd519da8cd998f400f
     changey = changey/44.2;
 
     while(currangle < 0){ //conv to +ve angles only
@@ -255,9 +259,9 @@ void postData() {
 
       building_coord = String(generate_x()) + "," + String(generate_y());
 
-      battery_life = generate_battery_life();
+      battery_life = 0;//generate_battery_life();
 
-      building_size = generate_battery_life();
+      building_size = 0;//generate_battery_life();
   
       Serial.print('\n');
       Serial.println("POST DATA");
@@ -267,20 +271,20 @@ void postData() {
                              + "&alien_coord=" + alien_coord + "&alien_colour=" + alien_colour + "&building_coord" + building_coord + "&building_size" 
                              + building_size + "&battery_life" + battery_life + "";
      
-      Serial.print("httpRequestData: ");
-      Serial.println(httpRequestData);
+      //Serial.print("httpRequestData: ");
+      //Serial.println(httpRequestData);
           
       // Send HTTP POST request
       int httpResponseCode = http.POST(httpRequestData);
           
       if (httpResponseCode>0) {
-        Serial.print("HTTP Response code: ");
-        Serial.println(httpResponseCode);
+      //  Serial.print("HTTP Response code: ");
+       // Serial.println(httpResponseCode);
       }
 
       else {
-        Serial.print("Error code: ");
-        Serial.println(httpResponseCode);
+      //  Serial.print("Error code: ");
+       // Serial.println(httpResponseCode);
       }
           
       // Free resources
@@ -329,11 +333,10 @@ void Ultrasonic(){
 }
 
 void UDP_listen(){
+  //Serial.println("LISTENING UDP");
   int packetSize = UDP.parsePacket();
 
-  if (packetSize) {
-
-    remote = true;
+  if (packetSize) {  
     
     int len = UDP.read(packet, 255);
     
@@ -343,7 +346,16 @@ void UDP_listen(){
 
     }
     curPacket = String(packet);
-    
+    //Serial.println(curPacket);
+    if(curPacket == "true"){
+      Serial.println("remote set to true");
+      remote = true;
+    }
+    if(curPacket == "false"){
+      Serial.println("remote set to false");
+      remote = false;
+    }
+  
     // prints new movement if different from previous
     if(curPacket != prevPacket) {
      
@@ -360,12 +372,12 @@ void UDP_listen(){
         tok = strtok(NULL, " ");
       }
 
-      Serial.print("\nDist: ");
+      /*Serial.print("\nDist: ");
       Serial.print(intArray[0]);
       Serial.print(" Ang: ");
       Serial.print(intArray[1]);
       Serial.print(" Pow: ");
-      Serial.println(intArray[2]);
+      Serial.println(intArray[2]);*/
       
       UDPdistance = intArray[0];
       UDPdegrees =  intArray[1];
@@ -375,12 +387,12 @@ void UDP_listen(){
 
     else {
       // prints out movement being held
-      Serial.print("->");
+     // Serial.print("->");
     }
     
   }
   else {
-    remote = false;
+    //remote = false;
   }
 }  
 
@@ -391,7 +403,7 @@ void Sensors(void *param){
     
     mpu.update();
     if (recenter == true) {
-      Serial.println("recentered");
+      //Serial.println("recentered");
       initial_angle = mpu.getAngleZ();
       relative_angle = mpu.getAngleZ() - initial_angle;
       gyro_angle = abs(relative_angle);
@@ -402,15 +414,13 @@ void Sensors(void *param){
 
     UDP_listen();
     reconnectWIFI();
-    postData();
+  //  postData();
     
    }
 
 }
 
-void rotate(float r_angle)
-{   
-  totalangle += r_angle;
+void rotate(float r_angle, bool manual){    
 
   recenter = true;
   delay(10);
@@ -427,10 +437,15 @@ void rotate(float r_angle)
     angleSign = -1;
   }
 
-  while(gyro_angle < angleSign * r_angle) { 
+  if(manual == false){
+    totalangle += r_angle;
+  }
+
+  while(gyro_angle < angleSign * r_angle && curPacket != "0 0 0") { 
     in_range = true;
     relative_angle = mpu.getAngleZ() - initial_angle;
     gyro_angle = abs(relative_angle);   
+   
     // Serial.println(String(initial_angle) + " ::: " + String(relative_angle));
 
     // RAMP UP   
@@ -450,6 +465,7 @@ void rotate(float r_angle)
       rotationSpeed -= 4;
       in_range = false;
     }
+
     if (angleSign == 1) {
       robot.rotate(right_motor, rotationSpeed, CCW);
       robot.rotate(left_motor, rotationSpeed, CW);
@@ -462,6 +478,12 @@ void rotate(float r_angle)
     
     // Serial.println(String(angleSign * gyro_angle));
     delay(5);
+  }
+  curPacket = "0 0 0";
+
+
+  if(manual == true){
+    totalangle += angleSign * gyro_angle;
   }
   robot.rotate(right_motor, 0, CW);
   robot.rotate(left_motor, 0, CW);
@@ -504,15 +526,31 @@ void find_perpendicular() {
   perpTurn();
 }
 
-void driveStraight(int dist) {
+
+void driveStraight(int dist, bool manual) {
+int distsign;
+
+  if(dist < 0){
+     distsign = -1;
+  }
+  else{
+     distsign = 1;
+  }
+  dist = abs(dist);
+
   recenter = true;
   delay(10);
-  Serial.println("driveStraight running on core: " + String(xPortGetCoreID()));
+  //Serial.println("in driveStraight running on core: " + String(xPortGetCoreID()));
   dist = dist + total_y;
 
-  while(total_y < dist && frontsensor != true) {
+  int maxpower = 40;
+   if(manual == true){ //if remote control on, use power from remote.
+        maxpower = UDPpower;
+    }
+
+  while(total_y < dist && frontsensor != true && curPacket != "0 0 0") { //still stops during manual - stops you crashing into a wall
     relative_angle = mpu.getAngleZ() - initial_angle;
-    if ((millis() - timer >= 100) && Tp < 40) 
+    if ((millis() - timer >= 100) && Tp < maxpower) 
     {
     timer = millis();  //get ready for the next iteration
     Tp += 5;
@@ -533,7 +571,6 @@ void driveStraight(int dist) {
     total_x = total_x1/44.2;
     total_y = total_y1/44.2;
 
-    //mpu.update(); // dont need the update in here anymore - updates on sensor code core 0
     error = relative_angle; // proportional
     if (error == 0) {
         integral = 0;
@@ -545,116 +582,101 @@ void driveStraight(int dist) {
     correction = (Kp*(error) + Ki*(integral) + Kd*derivative) * -1;
     powerLeft = Tp - correction;
     powerRight = Tp + correction;  
+
+   
     
-    if (powerLeft > 45) {
-      powerLeft = 45;
+    if(powerLeft > maxpower + 5) {
+      powerLeft = maxpower + 5;
     }
-    else if (powerRight > 45) {
-      powerRight = 45;
+    else if (powerRight > maxpower + 5) {
+      powerRight = maxpower + 5;
     }
 
-    robot.rotate(right_motor, powerRight, CW);
-    robot.rotate(left_motor, powerLeft, CW);
+
+    if(distsign == 1){
+        robot.rotate(right_motor, powerRight, CW);
+        robot.rotate(left_motor, powerLeft, CW);
+    }
+    else{ //if -ve dist from manual control
+        robot.rotate(right_motor, powerLeft, CCW);
+        robot.rotate(left_motor, powerRight, CCW);
+    }
+
+   
+
 
     lastError = error;
     //Serial.println("Dist " + String(total_y) + "; error " + String(error) + "; power_left " + String(powerLeft) + "; powerRight " + String(powerRight));
     // Serial.println("\ttotal_y: "+String(total_y));
     // Serial.println("Error: " + String(error));    
     coords();
+    Serial.println(String(currx) + " , " + String(curry));
+
 
     delay(50);
   }
+  curPacket = "0 0 0";
+
 
   robot.rotate(right_motor, 0, CW);
   robot.rotate(left_motor, 0, CW);
 
-  if (frontsensor == true && leftUSTriggered == false && rightUSTriggered == false) {
-     find_perpendicular();
-  }
-  else if (frontsensor == true && leftUSTriggered == true && rightUSTriggered == false) {
-     rotate(90); 
-  }
-  }
+ if(manual == false){
+    if (frontsensor == true && leftUSTriggered == false && rightUSTriggered == false) {
+      find_perpendicular();
+    }
+    else if (frontsensor == true && leftUSTriggered == true && rightUSTriggered == false) {
+        rotate(90, false); 
+    }
+    else if(frontsensor == true && leftUSTriggered == false && rightUSTriggered == true){ //not sure if minus angles work 
+        rotate(-90, false);
+    }
+
+  }   
+
+}
 
 void manual_control(){
-  Serial.println("Entered manual control");
-    // // movement functions
-    // // turn off motor
-    // if (curPacket == "0 0 0"){
-    //   robot.brake(1);
-    //   robot.brake(2);
-    // }
-    
-    // // movements!
-    // else {
+    //Serial.println("ENTERED MANUAL CONTROL");
+    //Serial.println(curPacket);
+    if(curPacket == "0 0 0" || (UDPdistance == 0 && UDPdegrees == 0 && UDPpower == 0)){
+        robot.brake(1);
+        robot.brake(2);
+    }
+    else{ //movements:
+            //udppower applied in drivestraight function.
+        if(UDPdegrees == 0){//just forward/back
+            driveStraight(UDPdistance, true);//dont use avoidance
+            delay(5);
+        }
 
-    //   // forwards and backwards (no angles)
-    //   if (degrees == 0) {
-    //     if (distance > 0) {
-    //       direction = 1;
-    //     }
-    //     else {
-    //       direction = 2;
-    //     }
-    //     robot.rotate(right_motor, power, direction);
-    //     robot.rotate(left_motor, power, direction);
-    //   }
+        else if(UDPdegrees != 0 && UDPdistance == 0){ //if just rotate
+            if (UDPdegrees == abs(255)) {
+              rotate(static_cast<float>(UDPdegrees), true);
+            }
+            else{
+              rotate(static_cast<float>(UDPdegrees), false); 
+            }
+            
+            delay(5);
 
-    //   // rotation (no f/b)
-    //   if (degrees != 0 && distance == 0) {
-    //     if (degrees > 0) {
-    //       direction1 = 2;
-    //       direction2 = 1;
-    //       power1 = power * 0.5;
-    //     }
-    //     else {
-    //       direction1 = 1;
-    //       direction2 = 2;
-    //       power2 = power * 0.5;
-    //     }
-    //     robot.rotate(right_motor, power1, direction1);
-    //     robot.rotate(left_motor, power2, direction2);
-    //   }
+        }
 
-    //   // rotation and f/b
-    //   if (degrees != 0 && distance != 0) {
-    //     if (degrees > 0 && distance > 0) {
-    //       direction1 = 1;
-    //       direction2 = 1;
-    //       power1 = power * 0.5;
-    //       power2 = power;
-    //     }
+        else if(UDPdegrees != 0 && UDPdistance !=0){//forward/back and rotate
+            //should work fine with slider, not sure about controller
+            rotate(static_cast<float>(UDPdegrees), true); //do rotation 
+            driveStraight(UDPdistance, true);  //then forward the distance
+            //hopefully will allow coord tracking and not move in a stupid way. small increments so maybe works?
+        }
 
-    //     if (degrees < 0 && distance > 0) {
-    //       direction1 = 1;
-    //       direction2 = 1;
-    //       power1 = power;
-    //       power2 = power * 0.5;
-    //     }
-
-    //     if (degrees > 0 && distance < 0) {
-    //       direction1 = 2;
-    //       direction2 = 2;
-    //       power1 = power * 0.5;
-    //       power2 = power;
-    //     }
-
-    //     if (degrees < 0 && distance < 0) {
-    //       direction1 = 2;
-    //       direction2 = 2;
-    //       power1 = power;
-    //       power2 = power * 0.5;
-    //     }
-
-    //     robot.rotate(right_motor, power1, direction1);
-    //     robot.rotate(left_motor, power2, direction2);
-    //   }
-    // }
+    }
 }
 
 void auto_drive(){
-   driveStraight(10);
-   delay(50);
+  Serial.println("IN AUTO");
+   driveStraight(10, false);
+
+   delay(1000);
 }
 
 TaskHandle_t sensorupdate;
@@ -724,7 +746,11 @@ void loop() {
     auto_drive();
   }
   while (remote == true){
+    
     manual_control();
+
+   // Serial.println("x: " + String(currx));
+    //Serial.print(" y: " + String(curry));
   }
 
 }
