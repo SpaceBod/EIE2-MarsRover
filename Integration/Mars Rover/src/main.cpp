@@ -18,8 +18,6 @@ String rover_coord, fan_coord, alien_coord, alien_colour, building_coord;
 int rover_angle, battery_life;
 float building_size;
 
-// __________________________________________________________VARIABLE DECLARATION FOR DRIVE MODULE_____________________________________________________________
-
 char packet[255];
 char reply[] = "Packet received!";
 
@@ -36,6 +34,8 @@ int UDPpower;
 int intArray[3];
 
 bool remote = false;
+
+// __________________________________________________________VARIABLE DECLARATION FOR DRIVE MODULE_____________________________________________________________
 
 unsigned long lastTime = 0;
 
@@ -122,7 +122,7 @@ int radar_y = 0;
 
 String radar_present = "";
 
-//______________________________________________________________________________________________________________________________________________________________
+//_______________________________________________________________FUNCTIONS____________________________________________________________________________________
 
 void coords(){ //currx and curry are global - access directly when sending to sql
 
@@ -131,7 +131,7 @@ void coords(){ //currx and curry are global - access directly when sending to sq
     //mousecam_read_motion(&mdmancoord);
      
     float changex = convTwosComp(md.dx);
-    float changey = convTwosComp(md.dy);
+    f loat changey = convTwosComp(md.dy);
 
     changey = changey/44.2;
 
@@ -165,6 +165,7 @@ void coords(){ //currx and curry are global - access directly when sending to sq
       accx = sin(relang)*changey;
       currx = currx + accx;
     }
+
     else if(currangle > 180 && currangle <= 270){
       relang = currangle - 180;
       relang = (relang * 71)/4068;
@@ -211,8 +212,6 @@ void reconnectWIFI() {
   unsigned long interval = 1000;
   unsigned long currentMillis = millis();
    
-  //_______________________________________________________________RECONNECTING WIFI____________________________________________________________________
-  
   if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >=interval)) {
      Serial.println(millis());
      Serial.println("Reconnecting to WiFi...");
@@ -264,7 +263,9 @@ void postData() {
       Serial.println("POST DATA");
         
       // Data to send with HTTP POST
-      String httpRequestData = "api_key=" + apiKey + "&rover_coord=" + rover_coord + "&rover_angle=" + rover_angle + "&fan_coord=" + fan_coord + "&alien_coord=" + alien_coord + "&alien_colour=" + alien_colour + "&building_coord" + building_coord + "&building_size" + building_size + "&battery_life" + battery_life +"";
+      String httpRequestData = "api_key=" + apiKey + "&rover_coord=" + rover_coord + "&rover_angle=" + rover_angle + "&fan_coord=" + fan_coord 
+                             + "&alien_coord=" + alien_coord + "&alien_colour=" + alien_colour + "&building_coord" + building_coord + "&building_size" 
+                             + building_size + "&battery_life" + battery_life + "";
      
       Serial.print("httpRequestData: ");
       Serial.println(httpRequestData);
@@ -684,6 +685,7 @@ void setup() {
   mpu.setFilterGyroCoef(1);
 
   robot.begin();
+  
   //L298N DC Motor by Robojax.com
   pinMode(PIN_SS,OUTPUT);
   pinMode(PIN_MISO,INPUT);
