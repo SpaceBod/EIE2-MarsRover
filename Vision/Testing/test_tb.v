@@ -1,7 +1,7 @@
 module test_tb();
-    logic[7:0] r,g,b;
-    logic[9:0] h,v;
-    logic[17:0] s;
+    logic[7:0] red,green,blue;
+    logic[9:0] hue,val;
+    logic[17:0] sat;
 
     initial begin
 
@@ -9,39 +9,39 @@ module test_tb();
 
         $dumpvars(0, test_tb);
 
-        r = 149;
+        red = 0;
 
-        g = 179;
+        green = 0;
 
-        b = 89;
-
-        #10
-
-        $display("r: %d, g: %d, b:  %d", r,g,b);
-
-        $display("h: %d, s: %d, v: %d", h,s,v);
-
-        r = 22;
-
-        g = 48;
-
-        b = 65;
+        blue = 255;
 
         #10
 
-        $display("r: %d, g: %d, b:  %d", r,g,b);
+        $display("r: %d, g: %d, b:  %d", red,green,blue);
 
-        $display("h: %d, s: %d, v: %d", h,s,v);
+        $display("h: %d, s: %d, v: %d", hue,sat,val);
+
+        red = 22;
+
+        green = 48;
+
+        blue = 65;
+
+        #10
+
+        $display("r: %d, g: %d, b:  %d", red,green,blue);
+
+        $display("h: %d, s: %d, v: %d", hue,sat,val);
 
     end
 
     test dut(
-        .r(r),
-        .g(g),
-        .b(b),
-        .h(h),
-        .s(s),
-        .v(v)
+        .red(red),
+        .green(green),
+        .blue(blue),
+        .hue(hue),
+        .sat(sat),
+        .val(val)
     );
 
 endmodule

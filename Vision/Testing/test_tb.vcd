@@ -1,0 +1,61 @@
+$date
+	Mon Jun 27 10:53:36 2022
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module test_tb $end
+$var wire 10 ! val [9:0] $end
+$var wire 18 " sat [17:0] $end
+$var wire 10 # hue [9:0] $end
+$var reg 8 $ blue [7:0] $end
+$var reg 8 % green [7:0] $end
+$var reg 8 & red [7:0] $end
+$scope module dut $end
+$var wire 8 ' blue [7:0] $end
+$var wire 8 ( green [7:0] $end
+$var wire 8 ) red [7:0] $end
+$var wire 10 * val [9:0] $end
+$var wire 18 + sat [17:0] $end
+$var wire 10 , hue [9:0] $end
+$var wire 8 - cmin [7:0] $end
+$var wire 8 . cmax [7:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+b11111111 .
+b0 -
+b1010101000 ,
+b10000000000 +
+b1111111100 *
+b0 )
+b0 (
+b11111111 '
+b0 &
+b0 %
+b11111111 $
+b1010101000 #
+b10000000000 "
+b1111111100 !
+$end
+#10
+b1001000010 #
+b1001000010 ,
+b100000100 !
+b100000100 *
+b1010100101 "
+b1010100101 +
+b1000001 .
+b10110 -
+b1000001 $
+b1000001 '
+b110000 %
+b110000 (
+b10110 &
+b10110 )
+#20
