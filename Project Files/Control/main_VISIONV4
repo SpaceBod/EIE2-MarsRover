@@ -1,0 +1,85 @@
+#include "vision.h"
+
+uint8_t val[4];
+String bin_out;
+
+String colour_bin, colour, object_coord;
+
+float screen_centre = 320;
+
+int current_rover_x = 0;
+int current_rover_y = 0;
+
+float building_size = 0; 
+
+float left_x = 0;
+float right_x = 0;
+
+float width = 0;
+
+void setup(){
+
+  Serial.begin(115200);
+  Serial2.begin(115200, SERIAL_8N1, RXD_PIN, TXD_PIN);
+
+}
+
+void loop(){
+
+  if (Serial2.available()> 0 ){
+        
+        Serial2.readBytes(val, 4);
+        char hex_out[100];
+        sprintf(hex_out, "%02x%02x%02x%02x", val[3], val[2], val[1], val[0]);
+        
+        Serial.print(hex_out);
+        Serial.print(" ");
+        bin_out = hex_str_to_bin_str(hex_out);
+        //Serial.println(bin_out);
+
+        colour_bin = bin_out.substring(2,5);
+        left_x = bin_str_to_dec_num(bin_out.substring(5,16));
+        right_x = bin_str_to_dec_num(bin_out.substring(21,32));
+      
+        width = right_x - left_x;
+
+        if ((width < 550) && (width>75)){ //ignore values if bounding box is too big or small
+
+            left_x = bin_str_to_dec_num(bin_out.substring(5,16));
+            right_x = bin_str_to_dec_num(bin_out.substring(21,32));
+            colour = bin_to_colour(colour_bin);
+
+            if (colour == "building"){
+                building_size = find_building_size(left_x, right_x);
+            }
+
+            else {
+                building_size = 0;            
+            }
+
+            object_coord = find_coord(left_x, right_x, current_rover_x, current_rover_y);
+
+            Serial.print("colour_bin: "); Serial.println(colour_bin);
+            Serial.print("colour: "); Serial.println(colour);
+            Serial.print("left_x: "); Serial.println(left_x);
+            Serial.print("right_x: "); Serial.println(right_x);
+            Serial.print("object_coord: "); Serial.println(object_coord);
+            Serial.print("building_size: "); Serial.println(building_size);
+            Serial.println(" ");
+
+        }
+        else {
+            
+            left_x = 0;
+            right_x = 0;
+            colour = bin_to_colour(colour_bin);
+           
+            Serial.println ("ignore values - out of bounding box range");
+            Serial.print("left_x: "); Serial.println(left_x);
+            Serial.print("right_x: "); Serial.println(right_x);
+            Serial.print("colour: "); Serial.println(colour);
+        }     
+    
+   }
+
+}
