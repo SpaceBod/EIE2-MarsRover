@@ -9,8 +9,10 @@ Dilan Jayasena
 [Savraj Sian](https://github.com/SavrajSian)  
 Arthika Sivathasan
 
-
-
+  
+  
+  
+In particular, I focused on designing the frontend webserver (part of the command subsystem), used to manually control the rover and plot its location on a map (using ReactJS). Upon completion, I assisted in the drive subsystem of the rover.
 
 
 The aim of the project was to design and build a rover that can be either controlled manually, using a 
