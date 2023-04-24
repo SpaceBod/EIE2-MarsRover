@@ -9,10 +9,6 @@ Dilan Jayasena
 [Savraj Sian](https://github.com/SavrajSian)  
 Arthika Sivathasan
 
-  
-  
-  
-In particular, I focused on designing the frontend webserver (part of the command subsystem), used to manually control the rover and plot its location on a map (using ReactJS). Upon completion, I assisted in the drive subsystem of the rover.
 
 
 The aim of the project was to design and build a rover that can be either controlled manually, using a 
@@ -22,6 +18,8 @@ objects it encounters. The rover was to be solar-powered, utilising the solar-pa
 project was split into six different key subsystems, five of which were required to make the rover 
 move and detect aliens, buildings, and fans on the arena. The Power Module was to be a separate 
 substation used to charge a battery for the rover.  
+<br/>
+In particular, I focused on designing the frontend webserver (part of the command subsystem), used to manually control the rover and plot its location on a map (using ReactJS). Upon completion, I assisted in the drive subsystem of the rover.
 <br/>
 <br/>
 <img src="Images/roverImg.jpg" width=500>  
