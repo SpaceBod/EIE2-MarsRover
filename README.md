@@ -22,7 +22,7 @@ substation used to charge a battery for the rover.
 In particular, I focused on designing the frontend webserver (part of the command subsystem), used to manually control the rover and plot its location on a map (using ReactJS). Upon completion, I assisted in the drive subsystem of the rover.
 <br/>
 <br/>
-<img src="Images/rover.png" width=500>  
+<img src="Images/coverIMG.png" width=500>  
 <em>Image of finalised rover</em>
 <br/>
 <br/>
